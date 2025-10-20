@@ -272,7 +272,7 @@ def get_hvgs(anndata_dict):
         sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=None, inplace=True)
 
         # Get the HVGs
-        mask = not adata.var["highly_variable"]
+        mask = ~adata.var["highly_variable"]
         exclude = adata.var.index[mask].tolist()
 
         genes_to_exclude[cell_type] = exclude
