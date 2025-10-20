@@ -1,0 +1,43 @@
+{
+  "template": "https://github.com/scverse/cookiecutter-scverse",
+  "commit": "0410bcde274b405b3c628fbf5759df2431296970",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "MINAtraining",
+      "package_name": "mina",
+      "project_description": "v0 of Multicellular INtegration Analysis",
+      "author_full_name": "Klaus Kruger",
+      "author_email": "klaus.kruger@stud.uni-heidelberg.de",
+      "github_user": "KlausKruger",
+      "github_repo": "MINAtraining",
+      "license": "Unlicense",
+      "ide_integration": false,
+      "_copy_without_render": [
+        ".github/workflows/build.yaml",
+        ".github/workflows/test.yaml",
+        "docs/_templates/autosummary/**.rst"
+      ],
+      "_exclude_on_template_update": [
+        "CHANGELOG.md",
+        "LICENSE",
+        "README.md",
+        "docs/api.md",
+        "docs/index.md",
+        "docs/notebooks/example.ipynb",
+        "docs/references.bib",
+        "docs/references.md",
+        "src/**",
+        "tests/**"
+      ],
+      "_render_devdocs": false,
+      "_jinja2_env_vars": {
+        "lstrip_blocks": true,
+        "trim_blocks": true
+      },
+      "_template": "https://github.com/scverse/cookiecutter-scverse",
+      "_commit": "0410bcde274b405b3c628fbf5759df2431296970"
+    }
+  },
+  "directory": null
+}

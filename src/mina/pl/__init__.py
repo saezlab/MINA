@@ -1,1 +1,1 @@
-from .basic import BasicClass, basic_plot
+from .pl import plot_mcell_funcomics, plot_mcell_network, plot_sample_coverage, plot_view_genes, plot_view_samples

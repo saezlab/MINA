@@ -1,7 +1,7 @@
 from importlib.metadata import version
 
-from . import pl, pp, tl
+from . import down, pl, up
 
-__all__ = ["pl", "pp", "tl"]
+__all__ = ["pl", "up", "down"]
 
 __version__ = version("MINAtraining")
