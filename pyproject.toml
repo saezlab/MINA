@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = [ "hatchling" ]
 
 [project]
-name = "minatraining"
+name = "mina"
 version = "0.0.1"
 description = "v0 of Multicellular INtegration Analysis"
 readme = "README.md"
