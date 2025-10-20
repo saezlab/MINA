@@ -31,7 +31,7 @@ pip install MINAtraining
 1. Install the latest development version:
 
 ```bash
-pip install git+https://github.com/KlausKruger/MINAtraining.git@main
+pip install git+https://github.com/saezlab/MINA.git@main
 ```
 
 ## Release notes
