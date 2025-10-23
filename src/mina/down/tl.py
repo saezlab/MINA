@@ -202,6 +202,58 @@ def calc_total_variance(adata, associations_df, pval_thrs=0.05):
 
     return total_var_dict
 
+# Multiple tests
+
+def get_pval_matrix(adata, covars):
+    """
+    Compute adjusted p-value associations for multiple covariates in a model AnnData.
+
+    For each covariate, this function calls `down.get_associations` to test its
+    association with model factors and collects the adjusted p-values into a
+    DataFrame (p_df). Each column corresponds to a covariate and each row to a
+    factor (adata.var index).
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData object containing model results, with factor information in `.var`
+        and covariates in `.obs`.
+    covars : list of str
+        List of covariate names (columns in `adata.obs`) to test for association.
+
+    Returns
+    -------
+    p_df : pd.DataFrame
+        DataFrame of adjusted p-values with shape (n_factors, n_covariates),
+        where rows correspond to factors (`adata.var.index`) and columns
+        correspond to tested covariates.
+    """
+    # Validate covariates
+    existing_covars = [c for c in covars if c in adata.obs.columns]
+    missing_covars = [c for c in covars if c not in adata.obs.columns]
+
+    if missing_covars:
+        warnings.warn(f"Skipping missing covariates not found in adata.obs: {missing_covars}", UserWarning)
+
+    if not existing_covars:
+        raise ValueError("None of the provided covariates are present in adata.obs.")
+
+    # Collect adjusted p-values per covariate
+    p_df = pd.DataFrame()
+    for covar in existing_covars:
+        assocs = down.get_associations(
+            adata=adata,
+            test_variable=covar,
+            test_type=None,
+            random_effect=None
+        )
+        p_df[covar] = assocs["adj_p_value"]
+
+    # Assign factor names as index
+    p_df.index = adata.var.index
+
+    return p_df
+
 
 # Multicellular information networks
 

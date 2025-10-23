@@ -273,6 +273,75 @@ def plot_sample_coverage(
 
 # Downstream plotting functions
 
+# Associations
+
+def plot_pval_tiles(p_df: pd.DataFrame, star_threshold: float = 0.05, ax=None, title: str | None = None):
+    """
+    Make a tile plot where tiles are colored by -log10(p) and tiles with p <= star_threshold
+    are annotated with a star.
+
+    Parameters
+    ----------
+    p_df : pd.DataFrame
+        DataFrame of p-values (index = rows, columns = columns).
+    star_threshold : float, default 0.05
+        Threshold for plotting a star annotation.
+    ax : matplotlib.axes.Axes or None
+        If provided, draw on this Axes; otherwise create a new figure and axes.
+    title : str or None
+        Optional title for the plot.
+    """
+    # Copy to avoid modifying the input
+    p = p_df.copy()
+
+    # Handle zeros or non-positive values to avoid -log10 issues
+    # Replace any p <= 0 with the smallest positive float
+    min_positive = np.nextafter(0, 1)
+    p = p.mask(p <= 0, min_positive)
+
+    # Compute -log10(p)
+    neglog10 = -np.log10(p.astype(float))
+
+    # Prepare axes
+    created_fig = False
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(max(4, 0.6 * neglog10.shape[1]), max(3.5, 0.6 * neglog10.shape[0])))
+        created_fig = True
+
+    # Plot tiles using imshow (matplotlib default colormap)
+    im = ax.imshow(neglog10.values, aspect="auto")
+
+    # Ticks & tick labels
+    ax.set_xticks(range(neglog10.shape[1]))
+    ax.set_yticks(range(neglog10.shape[0]))
+    ax.set_xticklabels(neglog10.columns, rotation=45, ha="right")
+    ax.set_yticklabels(neglog10.index)
+
+    # Grid lines (optional, light)
+    ax.set_xticks(np.arange(-0.5, neglog10.shape[1], 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, neglog10.shape[0], 1), minor=True)
+    ax.grid(which="minor", linestyle="-", linewidth=0.5, alpha=0.3)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label("-log10(p-value)")
+
+    # Annotate stars for significant p-values
+    star_mask = p.values <= star_threshold
+    for i in range(star_mask.shape[0]):
+        for j in range(star_mask.shape[1]):
+            if star_mask[i, j]:
+                ax.text(j, i, "★", ha="center", va="center")
+
+    if title:
+        ax.set_title(title)
+
+    plt.tight_layout()
+    if created_fig:
+        return fig, ax
+    return ax
+
 # Functional enrichment
 
 
@@ -517,3 +586,7 @@ def plot_mcell_network(
         plt.savefig(save_path, bbox_inches="tight", dpi=220)
     plt.show()
     return G
+
+
+
+
