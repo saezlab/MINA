@@ -1,4 +1,4 @@
-# MINAtraining
+# MINA
 
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
