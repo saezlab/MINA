@@ -29,7 +29,12 @@ def extract_metadata_from_obs(obs: pd.DataFrame, groupby: str, sort: bool = Fals
             continue
 
         # Group values and check if each group has only one unique value
-        is_stable = obs.groupby(groupby)[col].nunique().eq(1).all()
+        is_stable = (
+            obs.groupby(groupby)[col]
+            .apply(lambda x: x.dropna().nunique() <= 1)
+            .all()
+        )
+
         if is_stable:
             stable_cols.append(col)
 
