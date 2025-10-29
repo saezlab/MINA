@@ -17,6 +17,8 @@ from scipy.stats import f_oneway, pearsonr
 from statsmodels.stats.multitest import multipletests
 
 from mina.down.utils import split_by_view
+from mina.down.tl import get_associations
+
 
 # Funcomics to multiviews
 
@@ -241,7 +243,7 @@ def get_pval_matrix(adata, covars):
     # Collect adjusted p-values per covariate
     p_df = pd.DataFrame()
     for covar in existing_covars:
-        assocs = down.get_associations(
+        assocs = get_associations(
             adata=adata,
             test_variable=covar,
             test_type=None,
