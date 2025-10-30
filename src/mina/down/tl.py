@@ -17,7 +17,6 @@ from scipy.stats import f_oneway, pearsonr
 from statsmodels.stats.multitest import multipletests
 
 from mina.down.utils import split_by_view
-from mina.down.tl import get_associations
 
 
 # Funcomics to multiviews
