@@ -63,37 +63,45 @@ def model_to_anndata(
     factors_dict = model.get_factors()
     if not isinstance(factors_dict, dict) or len(factors_dict) == 0:
         raise ValueError("model.get_factors() returned no groups.")
-
-    # Pick the first group by default (mirrors original 'group_1' behavior without hardcoding)
-    group_name = list(factors_dict.keys())[0]
-    Z = factors_dict[group_name].copy()
-
-    # Keep only samples of interest and in the desired order
-    # (Rows may be missing; reindex will introduce NaNs if so.)
-    Z = Z.loc[unique_samples]
-
+    
     # Clean factor names: remove spaces and ensure they start with 'Factor'
     def _clean_factor(name: object) -> str:
         s = str(name).replace(" ", "")
         return s if s.startswith("Factor") else f"Factor{s}"
 
-    Z.columns = [_clean_factor(col) for col in Z.columns]
+    # Concatenate all groups along rows (samples)
+    Z_list = []
+    for g, df in factors_dict.items():
+        df_g = df.copy()
+        df_g.columns = [_clean_factor(c) for c in df_g.columns]
+        Z_list.append(df_g)
+
+    Z_all = pd.concat(Z_list, axis=0)
+
+    # Now restrict/reorder to the union of samples you already computed
+    Z = Z_all.reindex(unique_samples)
 
     # ---------- 4) Explained variance per factor (R^2) ----------
     r2_dict = model.get_r2()
-    if group_name not in r2_dict:
-        # Fall back to first available group in r2 if the same key is not present
-        r2_group_name = list(r2_dict.keys())[0]
-    else:
-        r2_group_name = group_name
+    if not isinstance(r2_dict, dict) or len(r2_dict) == 0:
+        raise ValueError("model.get_r2() returned no groups.")
 
-    X = r2_dict[r2_group_name].copy()
-    # Ensure factor index names match Z's factor names using same cleaning
-    X.index = pd.Index([_clean_factor(ix) for ix in X.index])
+    r2_frames = []
+    for g, r2_df in r2_dict.items():
+        r2_g = r2_df.copy()
+        # clean factor names in the index so they match Z's column names
+        r2_g.index = [_clean_factor(ix) for ix in r2_g.index]
+        # encode group in the *columns* as "<view>:<group>"
+        r2_g.columns = [f"{col}:{g}" for col in r2_g.columns.astype(str)]
+        r2_frames.append(r2_g)
 
-    # Append the (inferred) group name to column labels to keep provenance
-    # (Mirrors "X.columns = X.columns + ':' + 'Chaffin'" from the prototype, but not hardcoded)
-    X.columns = str(r2_group_name) + ":" + X.columns.astype(str)
+    # Combine all groups along columns:
+    #   rows = factors
+    #   columns = view:group R²
+    X = pd.concat(r2_frames, axis=1)
+
+    # Finally, ensure the rows of X match the order of Z's columns (factors)
+    X = X.reindex(Z.columns)
 
     # Reorder rows of X to match the order of Z's columns (factors)
     # This ensures .var aligns with AnnData's columns (factors)
