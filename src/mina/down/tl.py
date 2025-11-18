@@ -193,7 +193,7 @@ def calc_total_variance(adata, associations_df, pval_thrs=0.05):
     """
     expl_var_dict = split_by_view(adata.var.copy())
     p = associations_df.set_index("feature")["adj_p_value"]
-    sig_factors = p[p < 0.05].index
+    sig_factors = p[p < pval_thrs].index
     total_var_dict = {}
     # For every dataframe inside expl_var_dict, sum the values in the columns
 
@@ -401,6 +401,7 @@ def get_multicell_net(
     standardize: bool = False,
     drop_na: bool = True,
     verbose: bool = True,
+    percentile: float = 0.85
 ) -> dict[str, pd.DataFrame]:
     """
     PLACEHOLDER
@@ -419,6 +420,8 @@ def get_multicell_net(
         If False, models encountering NA will be skipped.
     verbose
         If True, print/skips with warnings on failures.
+    percentile
+        Percentile threshold in [0,1] to select top genes from loadings per view.
 
     Returns
     -------
@@ -437,7 +440,7 @@ def get_multicell_net(
     # Now, compute the top genes for each factor
     for vname, _gl in loadings_dict.items():
         # Select the top genes for the specified factor
-        net = get_loading_gset(col=loadings_dict[vname].T[[sel_factor]], source_base=vname, percentile=0.85)
+        net = get_loading_gset(col=loadings_dict[vname].T[[sel_factor]], source_base=vname, percentile=percentile)
         # Extract the pseudobulk information
         data = pd.DataFrame(
             test_model.obsm[vname], columns=test_model.uns[f"{vname}_columns"], index=test_model.obs_names
