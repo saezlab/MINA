@@ -14,7 +14,8 @@ def filter_anndata_by_ncells(anndata_dict, min_cells):
 
     Parameters
     ----------
-    - anndata_dict (dict): Dictionary with AnnData objects as values.
+    - anndata_dict : dict[str, AnnData]
+        Dictionary with AnnData objects as values.
     - min_cells (int or dict):
         * If int, the same minimum number of cells is applied to all AnnData objects.
         * If dict, must have the same keys as anndata_dict, where each value is the minimum
@@ -68,8 +69,10 @@ def filter_views_by_samples(anndata_dict, min_rows):
 
     Parameters
     ----------
-    - anndata_dict (dict): Dictionary with AnnData objects as values.
-    - min_rows (int): Minimum number of rows required for an AnnData object to remain in the dictionary.
+    - anndata_dict : dict[str, AnnData]
+        Dictionary with AnnData objects as values.
+    - min_rows : int
+        Minimum number of rows required for an AnnData object to remain in the dictionary.
 
     Returns
     -------
@@ -94,9 +97,12 @@ def filter_genes_byexpr(anndata_dict, min_count, min_prop):
 
     Parameters
     ----------
-    - anndata_dict (dict): Dictionary with cell types as keys and AnnData objects as values.
-    - min_count (int): Minimum count threshold for filtering genes.
-    - min_prop (float): Minimum proportion of samples (rows) where the count is >= min_count.
+    - anndata_dict : dict[str, AnnData]
+        Dictionary with cell types as keys and AnnData objects as values.
+    - min_count : int
+        Minimum count threshold for filtering genes.
+    - min_prop : float
+        Minimum proportion of samples (rows) where the count is >= min_count.
     """
     for cell_type, adata in anndata_dict.items():
         min_count = np.clip(min_count, 0, None)
@@ -146,8 +152,10 @@ def filter_views_by_genes(anndata_dict, min_genes_per_view):
 
     Parameters
     ----------
-    - anndata_dict (dict): Dictionary with cell types as keys and AnnData objects as values.
-    - min_genes_per_view (int): Minimum number of genes (columns) that must remain in an AnnData object for it to be kept.
+    - anndata_dict : dict[str, AnnData] 
+        Dictionary with cell types as keys and AnnData objects as values.
+    - min_genes_per_view : int 
+        Minimum number of genes (columns) that must remain in an AnnData object for it to be kept.
     """
     # Create a list to store keys of views that should be removed
     keys_to_remove = [key for key, adata in anndata_dict.items() if adata.n_vars < min_genes_per_view]
@@ -168,9 +176,12 @@ def filter_samples_by_coverage(anndata_dict, threshold, min_prop):
 
     Parameters
     ----------
-    - anndata_dict (dict): Dictionary with cell types as keys and AnnData objects as values.
-    - threshold (float): The count threshold a gene value must exceed to be considered. Normally left at 0.
-    - min_prop (float): Minimum proportion of genes that must exceed the threshold for a sample to be kept.
+    - anndata_dict : dict[str, AnnData] 
+        Dictionary with cell types as keys and AnnData objects as values.
+    - threshold : float 
+        The count threshold a gene value must exceed to be considered. Normally left at 0.
+    - min_prop : float 
+        Minimum proportion of genes that must exceed the threshold for a sample to be kept.
     """
     # Validate dict-style thresholds if provided
     if isinstance(threshold, dict):
@@ -220,8 +231,10 @@ def filter_genes_by_celltype(anndata_dict, gene_lists):
 
     Parameters
     ----------
-    - anndata_dict (dict): Dictionary with cell types as keys and AnnData objects as values.
-    - gene_lists (dict): Dictionary with cell types as keys and lists of genes to exclude.
+    - anndata_dict : dict[str, AnnData] 
+        Dictionary with cell types as keys and AnnData objects as values.
+    - gene_lists : dict[str, list[str]]}
+        Dictionary with cell types as keys and lists of genes to exclude.
 
     Returns
     -------

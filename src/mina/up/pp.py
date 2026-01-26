@@ -87,22 +87,26 @@ def split_anndata_by_celltype(pdata, grouping="cell_type"):
     return celltype_adata_dict
 
 
-def norm_log(anndata_objects, target_sum=1e6, exclude_highly_expressed=False, max_value=None, center=True):
+def norm_log(anndata_dict, target_sum=1e6, exclude_highly_expressed=False, max_value=None, center=True):
     """
     Normalizes the total counts for each sample in each AnnData object, log-transforms, and scales (centers and scales) the data.
 
     Parameters
     ----------
-    - anndata_objects (dict): Dictionary with cell types as keys and AnnData objects as values.
-    - target_sum (float): The target total count per sample after normalization. Default is 1,000,000.
-    - exclude_highly_expressed (bool): Whether to exclude highly expressed genes from normalization. Default is False.
-    - max_value (float): Clip (truncate) to this maximum value after scaling to avoid outliers. Default is None (no clipping).
+    - anndata_dict : dict[str, AnnData]
+        Dictionary with cell types as keys and AnnData objects as values.
+    - target_sum : float 
+        The target total count per sample after normalization. Default is 1,000,000.
+    - exclude_highly_expressed : booleab 
+        Whether to exclude highly expressed genes from normalization. Default is False.
+    - max_value : float 
+        Clip (truncate) to this maximum value after scaling to avoid outliers. Default is None (no clipping).
 
     Returns
     -------
     - None: The function modifies the input dictionary in place.
     """
-    for _key, adata in anndata_objects.items():
+    for _key, adata in anndata_dict.items():
         # Step 1: Perform total count normalization
         sc.pp.normalize_total(adata, target_sum=target_sum, exclude_highly_expressed=exclude_highly_expressed)
 

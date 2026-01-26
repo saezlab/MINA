@@ -17,7 +17,7 @@ def plot_view_samples(
 
     Parameters
     ----------
-    anndata_dict : AnnData
+    anndata_dict : dict[str, AnnData]
         Dictionary of AnnData objects.
     figsize : tuple
         Figure size.
@@ -79,9 +79,9 @@ def plot_view_genes(anndata_dict, min_genes, table=False, figsize=(5, 5), dpi=10
 
     Parameters
     ----------
-    anndata_dict : AnnData
+    anndata_dict : dict[str, AnnData]
         Dictionary of AnnData objects.
-    figsize : tuple
+    figsize : tuple+++
         Figure size.
     dpi : int
         DPI resolution of figure.
@@ -144,12 +144,12 @@ def plot_sample_coverage(
     """
     Visualize coverage for each AnnData in a dict; highlight & label samples under the given proportion threshold.
 
-    Produces one figure per dict key (like your old loop).
+    Produces one figure per dict key.
 
     Parameters
     ----------
     anndata_dict : dict[str, AnnData]
-        Dict with AnnData objects as values.
+        Dictionary with AnnData objects as values.
     threshold : float | dict[str, float]
         Gene expression threshold. If dict, must contain all keys of anndata_dict.
     proportion : float | dict[str, float]
