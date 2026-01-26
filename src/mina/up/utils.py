@@ -1,5 +1,5 @@
 # Dependencies
-
+from anndata import AnnData
 
 # This function saves the raw counts in a layer called 'raw_counts' for each AnnData object in a dictionary
 def save_raw_counts(anndata_dict, layer_name="raw_counts"):
@@ -53,6 +53,7 @@ def append_view_to_var(anndata_dict, join=":"):
 
 def merge_adata_views(
     studies: list[dict[str, AnnData]],
+    study_names: list[str],
     view_mode: str = "union",
     min_view_studies: int = 2,
     var_mode: str = "outer",
@@ -65,6 +66,9 @@ def merge_adata_views(
     ----------
     studies : list[dict[str, AnnData]]
         List of dictionaries, each with view/cell-type keys and AnnData objects as values.
+    study_names : list[str]
+        Names of the studies corresponding to each entry in `studies`.
+        Must have the same length as `studies`.
     view_mode : str, ["union", "intersection", "min_n"], default "union"
         Determines how the view's merging is handled.
         "union": all views present in the studies
@@ -85,6 +89,7 @@ def merge_adata_views(
     - .obs_names are unique across studies
     - .var_names are harmonized across studies
     - views are harmonized accross studies
+    - `study_names` uniquely identify the studies and align with `studies`
 
     Returns
     -------
@@ -106,14 +111,19 @@ def merge_adata_views(
           are retained (strict intersection).
         - `.obs_names` (row identifiers): all original observation names 
           are preserved; duplicates across studies are not allowed.
+        - `.obs["study"]`: column indicating the study of origin for each
+          observation, using the names provided in `study_names`.
         - `.var` columns (features):
             * "inner" → only variables present in all contributing studies
             * "outer" → all variables present in at least one contributing study
             * "min_n" → variables present in at least `min_var_studies` studies
         - `.uns` and other metadata are merged conservatively with unique keys.
         - The resulting AnnData objects are copies; modifying them will
-          not affect the original input studies.       
+          not affect the original input studies.
     """
+
+    if len(studies) != len(study_names):
+        raise ValueError("study_names must have the same length as studies")
 
     if view_mode == "min_n" and min_view_studies < 2:
         raise ValueError("min_view_studies must be >= 2")
@@ -141,10 +151,12 @@ def merge_adata_views(
     for view in keep_views:
         view_to_adatas[view] = []
 
-    for study in studies:
+    for study_name, study in zip(study_names, studies):
         for view in keep_views:
             if view in study:
-                view_to_adatas[view].append(study[view])
+                a = study[view].copy()
+                a.obs["study"] = study_name
+                view_to_adatas[view].append(a)
 
     merged = {}
 
@@ -152,7 +164,6 @@ def merge_adata_views(
         if len(adatas) == 1:
             merged_adata = adatas[0].copy()
         else:
-            # Concatenate first using outer join on variables
             merged_adata = ad.concat(
                 adatas,
                 axis=0,
@@ -185,7 +196,6 @@ def merge_adata_views(
                 obs_cols &= set(a.obs.columns)
 
         merged_adata.obs = merged_adata.obs.loc[:, sorted(obs_cols)]
-
         merged[view] = merged_adata
 
     return merged
