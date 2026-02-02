@@ -1,1 +1,1 @@
-from .pl import plot_mcell_funcomics, plot_mcell_network, plot_sample_coverage, plot_view_genes, plot_view_samples
+from .pl import plot_mcell_funcomics, plot_mcell_network, plot_sample_coverage, plot_view_genes, plot_view_samples, plot_pval_tiles

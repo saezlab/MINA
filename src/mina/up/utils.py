@@ -96,30 +96,28 @@ def merge_adata_views(
     merged : dict[str, AnnData]
         Dictionary of merged AnnData objects, one per retained view.
 
-        Keys
-        ----
-        Each key corresponds to a view (modality/cell type) retained 
-        according to `view_mode` across the input studies.
+        **Keys**
+            Each key corresponds to a view (modality/cell type) retained
+            according to `view_mode` across the input studies.
 
-        Values
-        ------
-        Each value is an AnnData object resulting from concatenating
-        the corresponding AnnData objects from all studies that contain 
-        that view. Guarantees:
+        **Values**
+            Each value is an AnnData object resulting from concatenating
+            the corresponding AnnData objects from all studies that contain 
+            that view. Guarantees:
 
-        - `.obs` columns: only columns present in all contributing studies
-          are retained (strict intersection).
-        - `.obs_names` (row identifiers): all original observation names 
-          are preserved; duplicates across studies are not allowed.
-        - `.obs["study"]`: column indicating the study of origin for each
-          observation, using the names provided in `study_names`.
-        - `.var` columns (features):
-            * "inner" → only variables present in all contributing studies
-            * "outer" → all variables present in at least one contributing study
-            * "min_n" → variables present in at least `min_var_studies` studies
-        - `.uns` and other metadata are merged conservatively with unique keys.
-        - The resulting AnnData objects are copies; modifying them will
-          not affect the original input studies.
+            - `.obs` columns: only columns present in all contributing studies
+                are retained (strict intersection).
+            - `.obs_names` (row identifiers): all original observation names 
+                are preserved; duplicates across studies are not allowed.
+            - `.obs["study"]`: column indicating the study of origin for each
+                observation, using the names provided in `study_names`.
+            - `.var` columns (features):
+                * "inner" → only variables present in all contributing studies
+                * "outer" → all variables present in at least one contributing study
+                * "min_n" → variables present in at least `min_var_studies` studies
+            - `.uns` and other metadata are merged conservatively with unique keys.
+            - The resulting AnnData objects are copies; modifying them will 
+              not affect the original input studies.
     """
 
     if len(studies) != len(study_names):

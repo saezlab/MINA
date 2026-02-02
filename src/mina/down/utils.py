@@ -12,7 +12,7 @@ def model_to_anndata(
     anndata_dict: dict[str, ad.AnnData],
     metadata: pd.DataFrame,
     model,
-) -> ad.AnnData:
+    ) -> ad.AnnData:
     """
     Convert a factor model (e.g., MOFAFLEX) output + pseudobulk AnnData views into a single AnnData.
 
@@ -21,6 +21,7 @@ def model_to_anndata(
     anndata_dict
         Dict of AnnData objects (each a pseudobulk view). Keys will be used to name .obsm entries.
         Each AnnData is expected to have:
+
           - obs index = sample IDs (pseudobulk rows)
           - var index = feature (gene) names
           - obs['psbulk_cells'] (optional): number of contributing single cells per sample (will be copied to .obs)
@@ -28,6 +29,7 @@ def model_to_anndata(
         DataFrame with sample-level metadata, indexed by sample ID. Will be aligned to the union of samples.
     model
         Trained model exposing:
+        
           - get_factors() -> Dict[group_name, pd.DataFrame]  # rows = samples, cols = factors
           - get_r2()      -> Dict[group_name, pd.DataFrame]  # rows = factors, cols = views/batches
           - get_weights() -> Dict[view_name, pd.DataFrame]   # rows = features, cols = factors
@@ -36,6 +38,7 @@ def model_to_anndata(
     -------
     AnnData
         AnnData with:
+        
           - X: samples × factors (factor scores)
           - obs: metadata aligned to samples in X
           - var: per-factor annotations (explained variance per view), with columns like "<view>:<group>"

@@ -262,9 +262,8 @@ def get_pval_matrix(adata, covars):
 def get_loading_gset(col, source_base: str, percentile: float = 0.85) -> pd.DataFrame:
     """
     col: Series or 1-col DataFrame of loadings (index = targets/features)
-
     source_base: e.g. "Cardiomyocytes"
-    percentile: quantile in [0,1] computed on |values| within each sign
+    percentile: quantile in [0,1] computed on ``values`` within each sign
     """
     s = col.squeeze().dropna()  # ensure Series
 

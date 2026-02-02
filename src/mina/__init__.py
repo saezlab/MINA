@@ -4,4 +4,4 @@ from . import down, pl, up
 
 __all__ = ["pl", "up", "down"]
 
-__version__ = version("MINAtraining")
+__version__ = version("MINA")
