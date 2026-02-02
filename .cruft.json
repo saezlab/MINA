@@ -4,7 +4,7 @@
   "checkout": null,
   "context": {
     "cookiecutter": {
-      "project_name": "MINAtraining",
+      "project_name": "MINA",
       "package_name": "mina",
       "project_description": "v0 of Multicellular INtegration Analysis",
       "author_full_name": "Klaus Kruger",
