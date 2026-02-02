@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a new feature for MINAtraining
+description: Propose a new feature for MINA
 labels: enhancement
 body:
   - type: textarea

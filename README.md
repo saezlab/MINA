@@ -3,8 +3,8 @@
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
 
-[badge-tests]: https://img.shields.io/github/actions/workflow/status/KlausKruger/MINAtraining/test.yaml?branch=main
-[badge-docs]: https://img.shields.io/readthedocs/MINAtraining
+[badge-tests]: https://img.shields.io/github/actions/workflow/status/saezlab/MINA/test.yaml?branch=main
+[badge-docs]: https://img.shields.io/readthedocs/MINA
 
 v0 of Multicellular INtegration Analysis
 
@@ -18,10 +18,10 @@ in particular, the [API documentation][].
 You need to have Python 3.13 or newer installed on your system.
 If you don't have Python installed, we recommend installing [uv][].
 
-There are several alternative options to install MINAtraining:
+There are several alternative options to install MINA:
 
 <!--
-1) Install the latest release of `MINAtraining` from [PyPI][]:
+1) Install the latest release of `MINA` from [PyPI][]:
 
 ```bash
 pip install MINA
@@ -49,9 +49,9 @@ If you found a bug, please use the [issue tracker][].
 
 [uv]: https://github.com/astral-sh/uv
 [scverse discourse]: https://discourse.scverse.org/
-[issue tracker]: https://github.com/KlausKruger/MINAtraining/issues
-[tests]: https://github.com/KlausKruger/MINAtraining/actions/workflows/test.yaml
-[documentation]: https://MINAtraining.readthedocs.io
-[changelog]: https://MINAtraining.readthedocs.io/en/latest/changelog.html
-[api documentation]: https://MINAtraining.readthedocs.io/en/latest/api.html
-[pypi]: https://pypi.org/project/MINAtraining
+[issue tracker]: https://github.com/saezlab/MINA/issues
+[tests]: https://github.com/saezlab/MINA/actions/workflows/test.yaml
+[documentation]: https://MINA.readthedocs.io
+[changelog]: https://MINA.readthedocs.io/en/latest/changelog.html
+[api documentation]: https://MINA.readthedocs.io/en/latest/api.html
+[pypi]: https://pypi.org/project/MINA

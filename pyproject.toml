@@ -50,7 +50,7 @@ optional-dependencies.test = [
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://MINA.readthedocs.io/"
-urls.Homepage = "https://github.com/saezlab/MINA
+urls.Homepage = "https://github.com/saezlab/MINA"
 urls.Source = "https://github.com/saezlab/MINA"
 
 [tool.hatch.metadata]
