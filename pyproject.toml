@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = [ "hatchling" ]
 
 [project]
-name = "minatraining"
+name = "mina"
 version = "0.0.1"
 description = "v0 of Multicellular INtegration Analysis"
 readme = "README.md"
@@ -49,9 +49,9 @@ optional-dependencies.test = [
   "pytest",
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
-urls.Documentation = "https://MINAtraining.readthedocs.io/"
-urls.Homepage = "https://github.com/KlausKruger/MINAtraining"
-urls.Source = "https://github.com/KlausKruger/MINAtraining"
+urls.Documentation = "https://MINA.readthedocs.io/"
+urls.Homepage = "https://github.com/saezlab/MINA
+urls.Source = "https://github.com/saezlab/MINA"
 
 [tool.hatch.metadata]
 allow-direct-references = true
