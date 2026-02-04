@@ -65,7 +65,7 @@ features = [ "dev" ]
 
 [tool.hatch.envs.docs]
 dependencies = [
-  "sphinx>=9.0"
+  "sphinx<9.0"
 ]
 features = [ "doc" ]
 scripts.build = "sphinx-build -M html docs docs/_build -W {args}"
