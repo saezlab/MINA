@@ -26,21 +26,25 @@ def run_ulm_per_view(
     view_dict: dict[str, pd.DataFrame], net: pd.DataFrame, **kwargs
 ) -> dict[str, dict[str, pd.DataFrame]]:
     """
-    Run decoupler.mt.ulm on each view's data matrix.
+    Run ULM (univariate linear modeling) separately for each view.
 
     Parameters
     ----------
-    view_dict : dict of {view_name: expression_df}
-        Dictionary of expression matrices (e.g. archetypes × genes).
-    net : pd.DataFrame
-        decoupler-compatible prior knowledge network.
-    **kwargs :
-        Additional keyword arguments passed to dc.mt.ulm().
+    view_dict : dict[str, pandas.DataFrame]
+        Dictionary mapping view names to expression matrices
+        (e.g., archetypes × genes).
+    net : pandas.DataFrame
+        Prior knowledge network in a decoupler-compatible format.
+    **kwargs : dict
+        Additional keyword arguments passed to ``decoupler.mt.ulm``.
 
     Returns
     -------
-    dict of {view_name: {'pw_acts': DataFrame, 'pw_padj': DataFrame}}
+    dict[str, dict[str, pandas.DataFrame]]
+        Dictionary mapping view names to result dictionaries containing
+        pathway activities (``pw_acts``) and adjusted p-values (``pw_padj``).
     """
+
     results = {}
 
     for view, data in view_dict.items():
@@ -61,30 +65,30 @@ def run_ulm_per_view(
 # and optional mixed models (LMM), with BH FDR correction.
 def get_associations(adata, test_variable, test_type=None, random_effect=None):
     """
-    Associate features (.X columns) of an AnnData object with an .obs covariate.
+    Test associations between model features and an observation-level covariate.
 
     Using:
       - For continuous covariates with no random_effect: Pearson correlation.
       - For categorical covariates with no random_effect: one-way ANOVA (F-test).
       - If random_effect is given: likelihood-ratio test on linear mixed models.
-
+      
     Parameters
     ----------
-    adata : AnnData
-        Annotated data matrix.
+    adata : anndata.AnnData
+        Annotated data matrix with features in ``.X`` and covariates in ``.obs``.
     test_variable : str
-        Column name in adata.obs to test against.
-    test_type : {'continuous', 'categorical'}, optional
-        Type of test_variable. If None, inferred from dtype (numeric -> continuous).
-    random_effect : str, optional
-        Column name in adata.obs to include as a random effect (groups) in LMM.
+        Column in ``adata.obs`` to test for association.
+    test_type : {``continuous``, ``categorical``} or None
+        Type of the test variable. If None, inferred from data type.
+    random_effect : str or None
+        Column in ``adata.obs`` specifying grouping for a random intercept.
 
     Returns
     -------
-    results_df : pd.DataFrame
-        DataFrame with columns ['feature', 'p_value', 'adj_p_value'], where 'feature'
-        is the variable name (adata.var_names), and p-values are raw and BH-adjusted.
+    pandas.DataFrame
+        DataFrame with columns ``feature``, ``p_value``, and ``adj_p_value``.
     """
+
     # Extract observation DataFrame
     obs = adata.obs.copy()
 
@@ -174,23 +178,30 @@ def get_associations(adata, test_variable, test_type=None, random_effect=None):
 
 def calc_total_variance(adata, associations_df, pval_thrs=0.05):
     """
-    Sum the r2 stored in var per group for factors that pass a significance threshold.
+    Compute the total explained variance per view for statistically significant features.
+
+    This function aggregates the R² values stored in ``adata.var`` by summing them
+    across features that pass a significance threshold in the associations table.
+    Variance is computed separately for each view/group as defined by ``split_by_view``.
 
     Parameters
     ----------
-    adata : AnnData
-        Model anndata containing r2 in var.
-    associations_df : DataFrame
-        Output from get_associations.
-    pval_thrs : float, optional
-        Significance threshold for p-values to consider a feature significant.
+    adata : anndata.AnnData
+        Model AnnData object containing explained variance (R²) values in ``adata.var``.
+    associations_df : pandas.DataFrame
+        Output from ``get_associations`` containing feature-level p-values and
+        adjusted p-values. Must include columns ``['feature', 'adj_p_value']``.
+    pval_thrs : float, ``optional``
+        Adjusted p-value threshold used to select significant features.
+        Default is 0.05.
 
     Returns
     -------
-    results_df : pd.DataFrame
-        DataFrame with columns ['feature', 'p_value', 'adj_p_value'], where 'feature'
-        is the variable name (adata.var_names), and p-values are raw and BH-adjusted.
+    dict[str, pandas.Series]
+        Dictionary mapping each view/group name to a Series containing the summed
+        explained variance per factor across significant features.
     """
+
     expl_var_dict = split_by_view(adata.var.copy())
     p = associations_df.set_index("feature")["adj_p_value"]
     sig_factors = p[p < pval_thrs].index
@@ -216,18 +227,15 @@ def get_pval_matrix(adata, covars):
 
     Parameters
     ----------
-    adata : AnnData
-        AnnData object containing model results, with factor information in `.var`
-        and covariates in `.obs`.
-    covars : list of str
-        List of covariate names (columns in `adata.obs`) to test for association.
+    adata : anndata.AnnData
+        AnnData object containing model factors in ``.var`` and covariates in ``.obs``.
+    covars : list[str]
+        Covariate names in ``adata.obs`` to test.
 
     Returns
     -------
-    p_df : pd.DataFrame
-        DataFrame of adjusted p-values with shape (n_factors, n_covariates),
-        where rows correspond to factors (`adata.var.index`) and columns
-        correspond to tested covariates.
+    pandas.DataFrame
+        Matrix of adjusted p-values with factors as rows and covariates as columns.
     """
     # Validate covariates
     existing_covars = [c for c in covars if c in adata.obs.columns]
@@ -261,10 +269,24 @@ def get_pval_matrix(adata, covars):
 
 def get_loading_gset(col, source_base: str, percentile: float = 0.85) -> pd.DataFrame:
     """
-    col: Series or 1-col DataFrame of loadings (index = targets/features)
-    source_base: e.g. "Cardiomyocytes"
-    percentile: quantile in [0,1] computed on ``values`` within each sign
+    Extract a gene set from a vector of loadings using a percentile threshold.
+
+    Parameters
+    ----------
+    col : pandas.Series or pandas.DataFrame
+        Loadings for a single factor. Index corresponds to target/features.
+    source_base : str
+        Base name for the gene set (e.g., "Cardiomyocytes").
+    percentile : float
+        Quantile in [0, 1] computed separately for positive and negative
+        loadings. Default is 0.85.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing the selected gene set.
     """
+
     s = col.squeeze().dropna()  # ensure Series
 
     # positives
@@ -296,27 +318,30 @@ def build_info_networks(
     verbose: bool = True,
 ) -> pd.DataFrame:
     """
-    Fit pairwise linear models among columns of an enriched-score matrix to infer directed edges.
+    Fit pairwise linear models among columns of an enriched-score matrix
+    to infer directed information networks.
 
     Parameters
     ----------
-    multicell_scores : pd.DataFrame
-        Enriched scores (samples × features) used as both predictors and targets.
-    random_effect : vector-like, optional
-        Random intercept grouping vector (e.g., study per sample). Length must match rows.
-        If provided, fits LMM; otherwise fits OLS.
-    standardize : bool, default False
-        If True, z-score each column before fitting.
-    drop_na : bool, default True
-        If True, drop rows with any NA among target/predictors and (if present) random effect.
-    verbose : bool, default True
-        If True, warn on skipped fits due to insufficient data.
+    multicell_scores : pandas.DataFrame
+        Enriched scores with shape (samples × features).
+    random_effect : ``array-like`` or None
+        Optional grouping vector defining random intercepts.
+        Length must match the number of rows.
+    standardize : bool
+        If True, z-score each feature before fitting.
+    drop_na : bool
+        If True, drop rows containing missing values.
+    verbose : bool
+        If True, emit warnings for skipped model fits.
 
     Returns
     -------
-    pd.DataFrame
-        Columns: [target, predictor, coef, R2, cor_estimate, n_samples, model_type]
+    pandas.DataFrame
+        Table with columns:
+        ``target, predictor, coef, R2, cor_estimate, n_samples, model_type``.
     """
+
     results = []
 
     Xmat = multicell_scores.copy()
@@ -407,26 +432,27 @@ def get_multicell_net(
 
     Parameters
     ----------
-    sel_factor
-        Factor name to select from the model (e.g., "Factor1").
-    random_effect
-        Optional random intercept grouping vector (e.g., 'study' per sample).
-        Length must match the number of samples. If omitted, OLS is used.
-    standardize
-        If True, z-score each column within condition before fitting.
-    drop_na
-        If True, drop rows with any NA among target/predictors and (if present) random effect.
-        If False, models encountering NA will be skipped.
-    verbose
-        If True, print/skips with warnings on failures.
-    percentile
-        Percentile threshold in [0,1] to select top genes from loadings per view.
+    test_model : anndata.AnnData
+        AnnData object containing factor scores and associated metadata.
+    sel_factor : str
+        Name of the factor to extract (e.g., "Factor1").
+    random_effect : ``array-like`` or None
+        Optional grouping vector defining random intercepts.
+    standardize : bool
+        If True, z-score features prior to model fitting.
+    drop_na : bool
+        If True, drop rows containing missing values.
+    verbose : bool
+        If True, warn when models are skipped.
+    percentile : float
+        Percentile threshold in [0, 1] for selecting top genes per view.
 
     Returns
     -------
-    tidy : dict
-        A dictionary where keys are direction and values are DataFrames containing the networks
+    dict[str, pandas.DataFrame]
+        Dictionary mapping interaction direction to inferred network tables.
     """
+
     # First, extract top genes for each factor
     # Get the gene loadings from the test model
     W = test_model.varm["gene_loadings"]
@@ -582,32 +608,31 @@ def project_wide_to_factors(
     sample_annotations: pd.DataFrame | None = None,
 ) -> ad.AnnData:
     """
-    Project a wide samples×features matrix into factor space using the model's loadings.
+    Project a samples × features matrix into latent factor space.
 
     Parameters
     ----------
-    wide : pd.DataFrame
-        (n_samples × n_features_in_wide). Columns are feature names (strings) that
-        overlap with `model_cols`.
-    W : np.ndarray
-        Loadings matrix with shape (n_factors × n_features_total) from the model.
+    wide : pandas.DataFrame or numpy.ndarray
+        Matrix with shape (n_samples × n_features_in_wide).
+    W : numpy.ndarray
+        Loadings matrix with shape (n_factors × n_features_total).
     model_cols : Iterable[str]
-        Feature names (len = n_features_total) giving the EXACT column order of W.
-    factor_names : Optional[Iterable[str]]
-        Names for output factor columns. If None, uses range(n_factors) for arrays or DF columns.
-    rcond : Optional[float]
-        rcond passed to np.linalg.pinv (smaller → keeps more singular values). If None, numpy default.
+        Feature names defining the column order of ``W``.
+    factor_names : Iterable[str] or None
+        Names for output factors. If None, default names are used.
+    rcond : float or None
+        Cutoff for small singular values passed to ``np.linalg.pinv``.
     center : bool
-        If True, center each column (subtract mean) after aligning to the model's features.
-    sample_annotations : Optional[pd.DataFrame]
-        Optional sample-level annotations to join into the returned AnnData.obs.
+        If True, center columns before projection.
+    sample_annotations : pandas.DataFrame or None
+        Optional sample-level metadata to add to ``.obs``.
 
     Returns
     -------
-    AnnData
-        An AnnData with X = projected factor scores (n_samples × n_factors) and
-        optional annotations joined into .obs.
+    anndata.AnnData
+        AnnData object with projected factor scores in ``.X``.
     """
+
     # -- 0) Normalize inputs
     if isinstance(wide, pd.DataFrame):
         X = wide.values

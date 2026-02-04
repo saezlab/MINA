@@ -37,7 +37,7 @@ optional-dependencies.doc = [
   "pandas",
   # Until pybtex >0.24.0 releases: https://bitbucket.org/pybtex-devs/pybtex/issues/169/
   "setuptools",
-  "sphinx>=8.1",
+  "sphinx>=4",
   "sphinx-autodoc-typehints",
   "sphinx-book-theme>=1",
   "sphinx-copybutton",
@@ -65,6 +65,9 @@ installer = "uv"
 features = [ "dev" ]
 
 [tool.hatch.envs.docs]
+dependencies = [
+  "sphinx<9.0"
+]
 features = [ "doc" ]
 scripts.build = "sphinx-build -M html docs docs/_build -W {args}"
 scripts.open = "python -m webbrowser -t docs/_build/html/index.html"

@@ -13,28 +13,35 @@ def plot_view_samples(
     anndata_dict, min_samples, table=False, figsize=(5, 5), dpi=100, ax=None, return_fig=False, **kwargs
 ):
     """
-    Quality Control plot to assess the quality of the obtained pseudobulk samples.
+    Quality control plot to assess the quality of the obtained pseudobulk samples.
 
     Parameters
     ----------
-    anndata_dict : dict[str, AnnData]
-        Dictionary of AnnData objects.
-    figsize : tuple
-        Figure size.
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary mapping view names to AnnData objects.
+    min_samples : int
+        Minimum number of samples required for a view to be included.
+    table : bool
+        Whether to return the underlying summary table instead of plotting.
+        Default is False.
+    figsize : tuple[int, int]
+        Size of the figure in inches. Default is (5, 5).
     dpi : int
-        DPI resolution of figure.
-    ax : Axes, None
-        A matplotlib axes object. If None returns new figure.
+        Resolution of the figure in dots per inch. Default is 100.
+    ax : matplotlib.axes.Axes or None
+        Matplotlib Axes object to plot on. If None, a new figure and axes
+        are created.
     return_fig : bool
-        Whether to return a Figure object or not.
-    kwargs : dict
-        Other keyword arguments are passed through to seaborn.scatterplot().
+        Whether to return the Figure object. Default is False.
+    **kwargs : dict
+        Additional keyword arguments passed to ``seaborn.scatterplot``.
 
     Returns
     -------
-    fig : Figure, None
-        If return_fig, returns Figure object.
+    fig : matplotlib.figure.Figure or None
+        The created Figure object if ``return_fig`` is True, otherwise None.
     """
+
     log_view_counts = []
     view_counts = []
     view_samples = []
@@ -73,32 +80,39 @@ def plot_view_samples(
         return data
 
 
-def plot_view_genes(anndata_dict, min_genes, table=False, figsize=(5, 5), dpi=100, ax=None, return_fig=False, **kwargs):
+def plot_view_genes(
+    anndata_dict, min_genes, table=False, figsize=(5, 5), dpi=100, ax=None, return_fig=False, **kwargs
+):
     """
-    Quality Control plot to assess the quality of the obtained pseudobulk samples.
+    Quality control plot to assess the quality of the obtained pseudobulk samples.
 
     Parameters
     ----------
-    anndata_dict : dict[str, AnnData]
-        Dictionary of AnnData objects.
-    figsize : tuple+++
-        Figure size.
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary mapping view names to AnnData objects.
+    min_genes : int
+        Minimum number of genes required for a view to be included.
+    table : bool
+        Whether to return the underlying summary table instead of plotting.
+        Default is False.
+    figsize : tuple[int, int]
+        Size of the figure in inches. Default is (5, 5).
     dpi : int
-        DPI resolution of figure.
-    ax : Axes, None
-        A matplotlib axes object. If None returns new figure.
+        Resolution of the figure in dots per inch. Default is 100.
+    ax : matplotlib.axes.Axes or None
+        Matplotlib Axes object to plot on. If None, a new figure and axes
+        are created.
     return_fig : bool
-        Whether to return a Figure object or not.
-    save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
-    kwargs : dict
-        Other keyword arguments are passed through to seaborn.scatterplot().
+        Whether to return the Figure object. Default is False.
+    **kwargs : dict
+        Additional keyword arguments passed to ``seaborn.scatterplot``.
 
     Returns
     -------
-    fig : Figure, None
-        If return_fig, returns Figure object.
+    fig : matplotlib.figure.Figure or None
+        The created Figure object if ``return_fig`` is True, otherwise None.
     """
+
     # Extract obs
     log_view_counts = []
     view_counts = []
@@ -142,35 +156,40 @@ def plot_sample_coverage(
     anndata_dict, threshold, proportion, table=False, figsize=(5, 5), dpi=100, return_fig=False, **kwargs
 ):
     """
-    Visualize coverage for each AnnData in a dict; highlight & label samples under the given proportion threshold.
+    Visualize coverage for each AnnData in a dictionary and highlight samples
+    below a given proportion threshold.
 
-    Produces one figure per dict key.
+    One figure is produced per dictionary key.
 
     Parameters
     ----------
-    anndata_dict : dict[str, AnnData]
-        Dictionary with AnnData objects as values.
-    threshold : float | dict[str, float]
-        Gene expression threshold. If dict, must contain all keys of anndata_dict.
-    proportion : float | dict[str, float]
-        Minimum proportion of genes above `threshold`. If dict, must contain all keys.
-    table : bool, default False
-        If True, return a dict of DataFrames (per key) instead of plotting.
-    figsize : tuple, default (5, 5)
-        Figure size per subplot.
-    dpi : int, default 100
-        Figure DPI.
-    return_fig : bool, default False
-        If True, return a dict {key: Figure}.
-    **kwargs :
-        Passed to the underlying point plotting (matplotlib `ax.scatter`).
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary mapping view names to AnnData objects.
+    threshold : float or dict[str, float]
+        Gene expression threshold. If a dict, must contain all keys of
+        ``anndata_dict``.
+    proportion : float or dict[str, float]
+        Minimum proportion of genes above ``threshold``. If a dict, must
+        contain all keys.
+    table : bool
+        If True, return summary tables instead of plotting.
+        Default is False.
+    figsize : tuple[int, int]
+        Figure size per subplot. Default is (5, 5).
+    dpi : int
+        Figure resolution in dots per inch. Default is 100.
+    return_fig : bool
+        If True, return the generated Figure objects. Default is False.
+    **kwargs : dict
+        Additional keyword arguments passed to ``matplotlib.axes.Axes.scatter``.
 
     Returns
     -------
-    dict[str, pandas.DataFrame] if table=True
-    dict[str, matplotlib.figure.Figure] if return_fig=True
-    None otherwise
+    dict[str, pandas.DataFrame] or dict[str, matplotlib.figure.Figure] or None
+        Summary tables if ``table`` is True, figures if ``return_fig`` is True,
+        otherwise None.
     """
+
     # Validate dict-style thresholds if provided
     if isinstance(threshold, dict):
         missing = set(anndata_dict.keys()) - set(threshold.keys())
@@ -277,20 +296,21 @@ def plot_sample_coverage(
 
 def plot_pval_tiles(p_df: pd.DataFrame, star_threshold: float = 0.05, ax=None, title: str | None = None):
     """
-    Make a tile plot where tiles are colored by -log10(p) and tiles with p <= star_threshold
-    are annotated with a star.
+    Create a tile plot colored by ``-log10(p)`` values, with tiles annotated
+    by a star when ``p <= star_threshold``.
 
     Parameters
     ----------
-    p_df : pd.DataFrame
-        DataFrame of p-values (index = rows, columns = columns).
-    star_threshold : float, default 0.05
-        Threshold for plotting a star annotation.
+    p_df : pandas.DataFrame
+        DataFrame of p-values with rows and columns defining the tile grid.
+    star_threshold : float
+        P-value threshold for star annotation. Default is 0.05.
     ax : matplotlib.axes.Axes or None
-        If provided, draw on this Axes; otherwise create a new figure and axes.
+        Axes to draw on. If None, a new figure and axes are created.
     title : str or None
         Optional title for the plot.
     """
+
     # Copy to avoid modifying the input
     p = p_df.copy()
 
@@ -357,31 +377,33 @@ def plot_mcell_funcomics(
     use_var: bool = False,
 ):
     """
-    Plot grouped heatmaps per view using the selected result (e.g. 'pw_acts'),
+    Plot grouped heatmaps per view using a selected result matrix.
 
-    filtering features based on adjusted p-value and showing shared color legend.
+    Features are filtered by adjusted p-value and ranked either by
+    mean absolute value or variance.
 
     Parameters
     ----------
-    result_dict : dict
-        Output of run_ulm_per_view — one entry per view.
+    result_dict : dict[str, dict[str, pandas.DataFrame]]
+        Output of ``run_ulm_per_view`` with one entry per view.
     result_key : str
-        Key inside each view result to plot ('pw_acts' or similar).
+        Key within each view result containing values to plot.
     pval_key : str
-        Key inside each view result containing adjusted p-values.
+        Key within each view result containing adjusted p-values.
     p_threshold : float
-        Significance threshold for adjusted p-values.
+        Adjusted p-value significance threshold.
     top_n : int
-        Number of top significant features per view to show.
+        Number of top significant features per view to display.
     cmap : str
-        Colormap for heatmap.
-    figsize : tuple
+        Colormap for the heatmaps.
+    figsize : tuple[int, int]
         Overall figure size.
     ytick_rotation : int
-        Rotation angle for sample names on y-axis.
+        Rotation angle for y-axis tick labels.
     use_var : bool
-        If True, use variance instead of mean(abs) to rank features.
+        If True, rank features by variance instead of mean absolute value.
     """
+
     views = []
     filtered_data = {}
 
@@ -474,7 +496,53 @@ def plot_mcell_network(
     edge_margin_factor: float = 0.55,
     arrows_on_top: bool = True,
 ):
-    """PLACEHOLDER"""
+    """
+    PLACEHOLDER
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame defining directed edges. Must contain at least source,
+        target, and edge weight columns.
+    weight_col : str
+        Column name containing edge weights. Default is "coef".
+    abs_cutoff : float
+        Minimum absolute weight required to keep an edge.
+    keep_negative : bool
+        Whether to retain negatively weighted edges.
+    edge_width_range : tuple[float, float]
+        Minimum and maximum edge widths used for scaling.
+    node_size : int
+        Size of network nodes.
+    arrowsize : int
+        Size of arrow heads.
+    reciprocal_curvature : float
+        Curvature used for reciprocal edges.
+    default_curvature : float
+        Curvature used for non-reciprocal edges.
+    positive_color : str
+        Color for positively weighted edges.
+    negative_color : str
+        Color for negatively weighted edges.
+    show_edge_labels : bool
+        Whether to display edge weight labels.
+    label_fmt : str
+        Format string used for edge labels.
+    title : str or None
+        Optional plot title.
+    save_path : str or None
+        If provided, save the figure to this path.
+    edge_margin_factor : float
+        Factor controlling spacing between nodes and edges.
+    arrows_on_top : bool
+        Whether arrows are drawn above nodes.
+
+    Returns
+    -------
+    matplotlib.figure.Figure or None
+        The generated figure, or None if not returned explicitly.
+    """
+
     required_cols = {"target", "predictor", weight_col}
     missing = required_cols - set(df.columns)
     if missing:

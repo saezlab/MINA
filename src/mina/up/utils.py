@@ -4,19 +4,21 @@ from anndata import AnnData
 # This function saves the raw counts in a layer called 'raw_counts' for each AnnData object in a dictionary
 def save_raw_counts(anndata_dict, layer_name="raw_counts"):
     """
-    Save the current count data (adata.X) into a specified layer for each AnnData in the dict.
+    Store raw count data in a layer for each AnnData object.
 
     Parameters
     ----------
-    - anndata_dict : anndata_dict 
-        Dictionary with view/cell-type keys and AnnData objects as values.
-    - layer_name : str 
-        The name of the layer to store the raw counts. Default is 'raw_counts'.
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary of AnnData objects.
+    layer_name : str
+        Name of the layer used to store raw counts.
 
     Returns
     -------
-    - None: The function modifies the input dictionary in place.
+    None
+        The input dictionary is modified in place.
     """
+
     for _view_name, adata in anndata_dict.items():
         # Save the current count matrix (adata.X) to a new layer
         adata.layers[layer_name] = adata.X.copy()
@@ -34,15 +36,16 @@ def append_view_to_var(anndata_dict, join=":"):
 
     Parameters
     ----------
-    anndata_dict : dict[str, AnnData]
-        Dictionary with view/cell-type keys and AnnData objects as values.
-    join : str, default ":"
-        String used between key and original feature name.
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary mapping views to AnnData objects.
+    join : str
+        Separator used between view name and feature name.
+        Default is ":"
 
     Returns
     -------
     None
-        The function updates `.var_names` of each AnnData in the input dict.
+        Updates ``.var_names`` in place.
     """
     for key, adata in anndata_dict.items():
         # Ensure string feature names and prefix with key
@@ -60,45 +63,41 @@ def merge_adata_views(
     min_var_studies: int = 2
 ) -> dict[str, AnnData]:
     """
-    Merge multiple AnnData dictionaries (studies) into a single dictionary.
+    Merge multiple study-level AnnData dictionaries into unified views.
 
     Parameters
     ----------
-    studies : list[dict[str, AnnData]]
-        List of dictionaries, each with view/cell-type keys and AnnData objects as values.
+    studies : list[dict[str, anndata.AnnData]]
+        List of study dictionaries, each mapping view names to AnnData objects.
     study_names : list[str]
-        Names of the studies corresponding to each entry in `studies`.
-        Must have the same length as `studies`.
-    view_mode : str, ["union", "intersection", "min_n"], default "union"
-        Determines how the view's merging is handled.
-        "union": all views present in the studies
-        "intersection": only views present in all studies
-        "min_n": views present in at least min_view_studies
-    min_view_studies : int,  default 2
-        threshold for "min_n" in view_mode
-    var_mode : str, ["inner", "outer", "min_n"], default "outer"
-        Determines how the variables's merging is handled.
-        "inner": only views present in all studies
-        "outer": all variables present in the studies
-        "min_n": variables present in at least min_var_studies
+        Unique identifiers for each study. Must align with ``studies``.
+    view_mode : ``{'union', 'intersection', 'min_n'}``
+        Strategy for selecting views across studies.
+    min_view_studies : int
+        Minimum number of studies required when ``view_mode='min_n'``.
+    var_mode : ``{'inner', 'outer', 'min_n'}``
+        Strategy for merging variables (features).
+    min_var_studies : int
+        Minimum number of studies required when ``var_mode='min_n'``.
 
     Assumptions
     -----------
-    - .obs columns are already harmonized across studies
-    - .obs is merged by strict intersection
-    - .obs_names are unique across studies
-    - .var_names are harmonized across studies
-    - views are harmonized accross studies
-    - `study_names` uniquely identify the studies and align with `studies`
+    note::
+        Observation columns are harmonized across studies.
+        Observation names are unique across studies.
+        Feature names are harmonized across studies.
+        View names are consistent across studies.
+        ``study_names`` uniquely identify studies.
+
 
     Returns
     -------
-    merged : dict[str, AnnData]
+    merged : dict[str, anndata.AnnData]
         Dictionary of merged AnnData objects, one per retained view.
 
         **Keys**
             Each key corresponds to a view (modality/cell type) retained
-            according to `view_mode` across the input studies.
+            according to ``view_mode`` across the input studies.
 
         **Values**
             Each value is an AnnData object resulting from concatenating
@@ -106,15 +105,15 @@ def merge_adata_views(
             that view. Guarantees:
 
             - `.obs` columns: only columns present in all contributing studies
-                are retained (strict intersection).
+              are retained (strict intersection).
             - `.obs_names` (row identifiers): all original observation names 
-                are preserved; duplicates across studies are not allowed.
+              are preserved; duplicates across studies are not allowed.
             - `.obs["study"]`: column indicating the study of origin for each
-                observation, using the names provided in `study_names`.
+              observation, using the names provided in ``study_names``.
             - `.var` columns (features):
-                * "inner" → only variables present in all contributing studies
-                * "outer" → all variables present in at least one contributing study
-                * "min_n" → variables present in at least `min_var_studies` studies
+                * ``"inner"`` → only variables present in all contributing studies
+                * ``"outer"`` → all variables present in at least one contributing study
+                * ``"min_n"`` → variables present in at least ``min_var_studies`` studies
             - `.uns` and other metadata are merged conservatively with unique keys.
             - The resulting AnnData objects are copies; modifying them will 
               not affect the original input studies.
