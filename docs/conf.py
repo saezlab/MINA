@@ -33,6 +33,9 @@ bibtex_bibfiles = ["references.bib"]
 templates_path = ["_templates"]
 nitpicky = False  # Warn about broken links
 warnings_are_errors = False
+suppress_warnings = [
+    "toc.not_included",
+]
 
 needs_sphinx = "4.0"
 
