@@ -10,18 +10,25 @@ import scanpy as sc
 # Generate study metadata from pseudobulks
 def extract_metadata_from_obs(obs: pd.DataFrame, groupby: str, sort: bool = False) -> pd.DataFrame:
     """
-    Extract group-level metadata by keeping only columns that have a single unique value per group.
+    Extract group-level metadata from an observation table.
+
+    Only columns with a single unique value per group are retained.
 
     Parameters
     ----------
-        obs (pd.DataFrame): The .obs DataFrame from an AnnData object.
-        groupby (str): Column to group by (e.g., 'patient_id').
-        sort (bool): Determine if natural sorting should be used
+    obs : pandas.DataFrame
+        Observation metadata (e.g., ``AnnData.obs``).
+    groupby : str
+        Column used to define groups.
+    sort : bool
+        Whether to apply natural sorting to group identifiers.
 
     Returns
     -------
-        pd.DataFrame: Group-level metadata with consistent columns, naturally sorted by group ID.
+    pandas.DataFrame
+        Group-level metadata table.
     """
+
     stable_cols = []
 
     for col in obs.columns:
@@ -65,17 +72,21 @@ def extract_metadata_from_obs(obs: pd.DataFrame, groupby: str, sort: bool = Fals
 
 def split_anndata_by_celltype(pdata, grouping="cell_type"):
     """
-    Splits an AnnData object by cell type, returning a dictionary of AnnData objects per cell type.
+    Split an AnnData object into multiple AnnData objects by cell type.
 
     Parameters
     ----------
-    - pdata (AnnData): Input AnnData object with gene expression data.
-    - grouping (str): Column in `pdata.obs` indicating cell type.
+    pdata : anndata.AnnData
+        Input AnnData object.
+    grouping : str
+        Column in ``pdata.obs`` defining cell types.
 
     Returns
     -------
-    - celltype_adata_dict (dict): Dict with cell types as keys and AnnData objects as values.
+    dict[str, anndata.AnnData]
+        Dictionary mapping cell types to AnnData objects.
     """
+
     if grouping not in pdata.obs.columns:
         raise ValueError(f"'{grouping}' not found in `pdata.obs`.")
 
@@ -89,23 +100,27 @@ def split_anndata_by_celltype(pdata, grouping="cell_type"):
 
 def norm_log(anndata_dict, target_sum=1e6, exclude_highly_expressed=False, max_value=None, center=True):
     """
-    Normalizes the total counts for each sample in each AnnData object, log-transforms, and scales (centers and scales) the data.
+    Normalize, log-transform, and scale AnnData objects in place.
 
     Parameters
     ----------
-    - anndata_dict : dict[str, AnnData]
-        Dictionary with cell types as keys and AnnData objects as values.
-    - target_sum : float 
-        The target total count per sample after normalization. Default is 1,000,000.
-    - exclude_highly_expressed : booleab 
-        Whether to exclude highly expressed genes from normalization. Default is False.
-    - max_value : float 
-        Clip (truncate) to this maximum value after scaling to avoid outliers. Default is None (no clipping).
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary of AnnData objects.
+    target_sum : float
+        Target total count per sample after normalization.
+    exclude_highly_expressed : bool
+        Whether to exclude highly expressed genes during normalization.
+    max_value : float or None
+        Maximum value after scaling to clip outliers.
+    center : bool
+        Whether to center features during scaling.
 
     Returns
     -------
-    - None: The function modifies the input dictionary in place.
+    None
+        The input dictionary is modified in place.
     """
+
     for _key, adata in anndata_dict.items():
         # Step 1: Perform total count normalization
         sc.pp.normalize_total(adata, target_sum=target_sum, exclude_highly_expressed=exclude_highly_expressed)

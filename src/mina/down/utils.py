@@ -7,47 +7,32 @@ import pandas as pd
 import scipy.sparse as sp
 
 
-# Utility Functions:
 def model_to_anndata(
     anndata_dict: dict[str, ad.AnnData],
     metadata: pd.DataFrame,
     model,
-    ) -> ad.AnnData:
+) -> ad.AnnData:
     """
-    Convert a factor model (e.g., MOFAFLEX) output + pseudobulk AnnData views into a single AnnData.
+    Combine a factor model and multiple pseudobulk views into a single AnnData object.
 
     Parameters
     ----------
-    anndata_dict
-        Dict of AnnData objects (each a pseudobulk view). Keys will be used to name .obsm entries.
-        Each AnnData is expected to have:
-
-          - obs index = sample IDs (pseudobulk rows)
-          - var index = feature (gene) names
-          - obs['psbulk_cells'] (optional): number of contributing single cells per sample (will be copied to .obs)
-    metadata
-        DataFrame with sample-level metadata, indexed by sample ID. Will be aligned to the union of samples.
-    model
-        Trained model exposing:
-        
-          - get_factors() -> Dict[group_name, pd.DataFrame]  # rows = samples, cols = factors
-          - get_r2()      -> Dict[group_name, pd.DataFrame]  # rows = factors, cols = views/batches
-          - get_weights() -> Dict[view_name, pd.DataFrame]   # rows = features, cols = factors
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary of pseudobulk AnnData views. Keys are used to name
+        entries in ``.obsm``.
+    metadata : pandas.DataFrame
+        Sample-level metadata indexed by sample ID.
+    model : object
+        Trained factor model exposing ``get_factors``, ``get_r2``,
+        and ``get_weights`` methods.
 
     Returns
     -------
-    AnnData
-        AnnData with:
-        
-          - X: samples × factors (factor scores)
-          - obs: metadata aligned to samples in X
-          - var: per-factor annotations (explained variance per view), with columns like "<view>:<group>"
-          - varm['gene_loadings']: factors × (view:feature) weights (as a dense array)
-          - uns['gene_loadings_columns']: list of (view:feature) column names for varm['gene_loadings']
-          - obsm[<view>]: samples × features pseudobulk matrices aligned to samples in X
-          - uns[<view>_columns]: feature (gene) names for each obsm matrix
-          - obs[<view>_n_cells]: (if available) number of contributing cells per sample and view
+    anndata.AnnData
+        AnnData object containing factor scores, metadata, gene loadings,
+        and aligned pseudobulk matrices.
     """
+
     # ---------- 1) Collect unique sample IDs present in any view ----------
     if not anndata_dict:
         raise ValueError("anndata_dict is empty. Provide at least one AnnData view.")
@@ -174,7 +159,23 @@ def model_to_anndata(
 
 
 def split_by_view(arch_gex: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Splits a DataFrame whose columns are in the format 'view:feature' into a dictionary of DataFrames per view."""
+    """
+    Split a wide DataFrame into view-specific DataFrames.
+
+    Column names are expected to follow the format ``"view:feature"``.
+
+    Parameters
+    ----------
+    arch_gex : pandas.DataFrame
+        DataFrame with columns encoded as ``view:feature``.
+
+    Returns
+    -------
+    dict[str, pandas.DataFrame]
+        Dictionary mapping view names to DataFrames containing only
+        features from that view.
+    """
+
     # Check all column names contain ':'
     if not all(":" in col for col in arch_gex.columns):
         raise ValueError("All column names must be in the format 'view:feature'")

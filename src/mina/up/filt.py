@@ -16,7 +16,7 @@ def filter_anndata_by_ncells(anndata_dict, min_cells):
     ----------
     - anndata_dict : dict[str, AnnData]
         Dictionary with AnnData objects as values.
-    - min_cells (int or dict):
+    - min_cells: int or dict:
         * If int, the same minimum number of cells is applied to all AnnData objects.
         * If dict, must have the same keys as anndata_dict, where each value is the minimum
           number of cells for that dataset.
@@ -297,7 +297,27 @@ def get_hvgs(anndata_dict):
 
 
 def filter_hvgs(anndata_dict):
-    """PLACEHOLDER"""
+    """
+    Filter genes in AnnData objects by retaining only highly variable genes (HVGs).
+
+    For each AnnData object in the dictionary, highly variable genes are identified
+    using Scanpy's ``highly_variable_genes`` method. Genes that are not marked as
+    highly variable are removed. After filtering, HVG-related annotation columns
+    are dropped from ``.var``.
+
+    This function modifies the input dictionary in place.
+
+    Parameters
+    ----------
+    anndata_dict : dict[str, AnnData]
+        Dictionary with view or cell-type names as keys and AnnData objects as values.
+
+    Returns
+    -------
+    None
+        The input AnnData objects are updated in place.
+    """
+
     gene_lists = get_hvgs(anndata_dict)
 
     filter_genes_by_celltype(anndata_dict, gene_lists)
