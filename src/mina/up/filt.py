@@ -8,23 +8,26 @@ import scanpy as sc
 
 def filter_anndata_by_ncells(anndata_dict, min_cells):
     """
-    Filters out samples (rows) from AnnData objects in the dictionary where the number of cells (psbulk_cells) in AnnData.obs is less than the specified threshold.
+    Filters out samples (rows) from AnnData objects in the dictionary where the number of cells (``psbulk_cells``) in ``.obs`` 
+    is less than the specified threshold.
 
     Updates the .var attribute with total counts per gene.
 
     Parameters
     ----------
-    - anndata_dict : dict[str, AnnData]
+    anndata_dict : dict[str, anndata.AnnData]
         Dictionary with AnnData objects as values.
-    - min_cells: int or dict:
+    min_cells : int or dict
         * If int, the same minimum number of cells is applied to all AnnData objects.
         * If dict, must have the same keys as anndata_dict, where each value is the minimum
           number of cells for that dataset.
 
     Returns
     -------
-    - None: The function modifies the input dictionary in place.
+    None
+        The function modifies the input dictionary in place.
     """
+
     for key, adata in list(anndata_dict.items()):
         # Determine the threshold for this dataset
         if isinstance(min_cells, dict):
@@ -69,15 +72,17 @@ def filter_views_by_samples(anndata_dict, min_rows):
 
     Parameters
     ----------
-    - anndata_dict : dict[str, AnnData]
+    anndata_dict : dict[str, anndata.AnnData]
         Dictionary with AnnData objects as values.
-    - min_rows : int
+    min_rows : int
         Minimum number of rows required for an AnnData object to remain in the dictionary.
 
     Returns
     -------
-    - None: The function modifies the input dictionary in place.
+    None
+        The function modifies the input dictionary in place.
     """
+
     # Get keys of AnnData objects that don't meet the row count threshold
     keys_to_remove = [key for key, adata in anndata_dict.items() if adata.n_obs < min_rows]
 
@@ -97,13 +102,19 @@ def filter_genes_byexpr(anndata_dict, min_count, min_prop):
 
     Parameters
     ----------
-    - anndata_dict : dict[str, AnnData]
+    anndata_dict : dict[str, anndata.AnnData]
         Dictionary with cell types as keys and AnnData objects as values.
-    - min_count : int
+    min_count : int
         Minimum count threshold for filtering genes.
-    - min_prop : float
+    min_prop : float
         Minimum proportion of samples (rows) where the count is >= min_count.
+
+    Returns
+    -------
+    None
+        The function modifies the input dictionary in place.
     """
+
     for cell_type, adata in anndata_dict.items():
         min_count = np.clip(min_count, 0, None)
         # Extract the count matrix (adata.X)
@@ -145,18 +156,24 @@ def filter_genes_byexpr(anndata_dict, min_count, min_prop):
 
 # Filtering views by number of genes
 
-
 def filter_views_by_genes(anndata_dict, min_genes_per_view):
     """
-    Drops AnnData objects from the dictionary that have fewer than the specified number    of genes (columns) after filtering.
+    Drops AnnData objects from the dictionary that have fewer than the specified number
+    of genes (columns) after filtering.
 
     Parameters
     ----------
-    - anndata_dict : dict[str, AnnData] 
+    anndata_dict : dict[str, anndata.AnnData]
         Dictionary with cell types as keys and AnnData objects as values.
-    - min_genes_per_view : int 
+    min_genes_per_view : int
         Minimum number of genes (columns) that must remain in an AnnData object for it to be kept.
+
+    Returns
+    -------
+    None
+        The function modifies the input dictionary in place.
     """
+
     # Create a list to store keys of views that should be removed
     keys_to_remove = [key for key, adata in anndata_dict.items() if adata.n_vars < min_genes_per_view]
 
@@ -176,13 +193,19 @@ def filter_samples_by_coverage(anndata_dict, threshold, min_prop):
 
     Parameters
     ----------
-    - anndata_dict : dict[str, AnnData] 
+    anndata_dict : dict[str, anndata.AnnData]
         Dictionary with cell types as keys and AnnData objects as values.
-    - threshold : float 
+    threshold : float
         The count threshold a gene value must exceed to be considered. Normally left at 0.
-    - min_prop : float 
+    min_prop : float
         Minimum proportion of genes that must exceed the threshold for a sample to be kept.
+
+    Returns
+    -------
+    None
+        The function modifies the input dictionary in place.
     """
+
     # Validate dict-style thresholds if provided
     if isinstance(threshold, dict):
         missing = set(anndata_dict.keys()) - set(threshold.keys())
@@ -231,15 +254,17 @@ def filter_genes_by_celltype(anndata_dict, gene_lists):
 
     Parameters
     ----------
-    - anndata_dict : dict[str, AnnData] 
+    anndata_dict : dict[str, anndata.AnnData]
         Dictionary with cell types as keys and AnnData objects as values.
-    - gene_lists : dict[str, list[str]]}
+    gene_lists : dict[str, list[str]]
         Dictionary with cell types as keys and lists of genes to exclude.
 
     Returns
     -------
-    - None: The function modifies the input AnnData objects in place.
+    None
+        The function modifies the input AnnData objects in place.
     """
+
     for cell_type, adata in anndata_dict.items():
         if cell_type in gene_lists:
             genes_to_exclude = gene_lists[cell_type]
@@ -270,7 +295,7 @@ def get_hvgs(anndata_dict):
 
     Parameters
     ----------
-    anndata_dict : dict[str, AnnData]
+    anndata_dict : dict[str, anndata.AnnData]
         Dictionary with view/cell-type keys and AnnData objects as values.
 
     Returns
@@ -278,6 +303,7 @@ def get_hvgs(anndata_dict):
     dict[str, list[str]]
         Dictionary with cell types as keys and lists of highly variable genes to exclude.
     """
+
     genes_to_exclude = {}
 
     for cell_type, adata in anndata_dict.items():
@@ -309,7 +335,7 @@ def filter_hvgs(anndata_dict):
 
     Parameters
     ----------
-    anndata_dict : dict[str, AnnData]
+    anndata_dict : dict[str, anndata.AnnData]
         Dictionary with view or cell-type names as keys and AnnData objects as values.
 
     Returns

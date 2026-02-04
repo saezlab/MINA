@@ -78,7 +78,7 @@ def get_associations(adata, test_variable, test_type=None, random_effect=None):
         Annotated data matrix with features in ``.X`` and covariates in ``.obs``.
     test_variable : str
         Column in ``adata.obs`` to test for association.
-    test_type : {'continuous', 'categorical'} or None
+    test_type : {``continuous``, ``categorical``} or None
         Type of the test variable. If None, inferred from data type.
     random_effect : str or None
         Column in ``adata.obs`` specifying grouping for a random intercept.
@@ -191,7 +191,7 @@ def calc_total_variance(adata, associations_df, pval_thrs=0.05):
     associations_df : pandas.DataFrame
         Output from ``get_associations`` containing feature-level p-values and
         adjusted p-values. Must include columns ``['feature', 'adj_p_value']``.
-    pval_thrs : float, optional
+    pval_thrs : float, ``optional``
         Adjusted p-value threshold used to select significant features.
         Default is 0.05.
 
@@ -325,7 +325,7 @@ def build_info_networks(
     ----------
     multicell_scores : pandas.DataFrame
         Enriched scores with shape (samples × features).
-    random_effect : array-like or None
+    random_effect : ``array-like`` or None
         Optional grouping vector defining random intercepts.
         Length must match the number of rows.
     standardize : bool
@@ -436,7 +436,7 @@ def get_multicell_net(
         AnnData object containing factor scores and associated metadata.
     sel_factor : str
         Name of the factor to extract (e.g., "Factor1").
-    random_effect : array-like or None
+    random_effect : ``array-like`` or None
         Optional grouping vector defining random intercepts.
     standardize : bool
         If True, z-score features prior to model fitting.
