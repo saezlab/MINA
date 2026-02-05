@@ -2,46 +2,46 @@
 
 ## Filtering
 ```{eval-rst}
-.. module:: mina.up.filt
-.. currentmodule:: mina
+.. currentmodule:: mina.up
 
 .. autosummary::
     :toctree: generated
+    :nosignatures:
 
-    up.filt.filter_anndata_by_ncells
-    up.filt.filter_views_by_samples
-    up.filt.filter_genes_byexpr
-    up.filt.filter_views_by_genes
-    up.filt.filter_samples_by_coverage
-    up.filt.filter_genes_by_celltype
-    up.filt.get_hvgs
-    up.filt.filter_hvgs
+    filter_anndata_by_ncells
+    filter_views_by_samples
+    filter_genes_byexpr
+    filter_views_by_genes
+    filter_samples_by_coverage
+    filter_genes_by_celltype
+    get_hvgs
+    filter_hvgs
 ```
 
 ## Preprocessing
 
 ```{eval-rst}
-.. module:: mina.up.pp
-.. currentmodule:: mina
+.. currentmodule:: mina.up
 
 .. autosummary::
     :toctree: generated
+    :nosignatures:
 
-    up.pp.extract_metadata_from_obs
-    up.pp.split_anndata_by_celltype
-    up.pp.norm_log
+    extract_metadata_from_obs
+    split_anndata_by_celltype
+    norm_log
 ```
 
 ## Utils
 
 ```{eval-rst}
-.. module:: mina.up.utils
-.. currentmodule:: mina
+.. currentmodule:: mina.up
 
 .. autosummary::
     :toctree: generated
+    :nosignatures:
 
-    up.utils.save_raw_counts
-    up.utils.append_view_to_var
-    up.utils.merge_adata_views
+    save_raw_counts
+    append_view_to_var
+    merge_adata_views
 ```

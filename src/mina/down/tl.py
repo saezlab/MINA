@@ -428,7 +428,13 @@ def get_multicell_net(
     percentile: float = 0.85
 ) -> dict[str, pd.DataFrame]:
     """
-    PLACEHOLDER
+    Given a factor of interest within a model, we reconstruct multicellular information networks by:
+    1) Extracting top genes associated with the factor in each view.
+    2) Enriching these gene sets in the pseudobulk data to get factor-associated scores.
+    3) Fitting pairwise linear models among the scores to infer directed networks.
+
+    The linear models can be controled with random effects, standardization, and NA handling options. 
+    The final output is a dictionary containing separate inferred networks for positive and negative associations.
 
     Parameters
     ----------
@@ -528,8 +534,18 @@ def multiview_to_wide(
 ) -> tuple[pd.DataFrame | np.ndarray, pd.Index, list[str]]:
     """
     Build a dense wide matrix (samples × features) from a dict of per-view AnnData.
-
     Uses the UNION of samples in first-seen order; rows missing in a view are zero-filled.
+
+    Parameters
+    ----------
+    views : dict[str, anndata.AnnData]
+        Dictionary mapping view names to AnnData objects containing the data.
+    sample_key : str or None
+        Optional column in ``.obs`` to use as sample IDs. If None, uses ``.obs_names``.
+    prefix_features : bool
+        If True, prefix feature names with view name (e.g., "view1:geneA"). Default is True.
+    return_dataframe : bool
+        If True, return a pandas DataFrame with sample IDs and feature names. If False, return a NumPy array with separate index and column lists.
     """
     if not views:
         raise ValueError("`views` is empty.")
