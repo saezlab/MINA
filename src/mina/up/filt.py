@@ -286,10 +286,56 @@ def filter_genes_by_celltype(anndata_dict, gene_lists):
             print(f"No gene list provided for {cell_type}")
 
 
+def filter_smpls_by_nview(anndata_dict, min_views):
+    """
+    Filters out samples in AnnData objects that do not appear in at least a minimum
+    number of views.
+
+    A sample (identified by its ``.obs.index``) is kept only if it is present in
+    ``min_views`` or more AnnData objects (views). The input dictionary is updated
+    in place, with each AnnData object subset to the eligible samples.
+
+    Parameters
+    ----------
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary with view or cell-type names as keys and AnnData objects as values.
+        Sample identifiers are taken from ``adata.obs.index`` and must be comparable
+        across views.
+    min_views : int
+        Minimum number of views in which a sample must be present to be retained.
+
+    Returns
+    -------
+    None
+        The function modifies the input dictionary in place.
+    """
+    
+    # For each anndata object within anndata_dict make a dataframe of index and view name
+    # Concatenate these dataframes
+    sample_view_list = []
+    for cell_type, adata in anndata_dict.items():
+        # Make a dataframe with two columns: index and view name
+        # Make the categorical index as a list of strings
+        patient_df = pd.DataFrame(anndata_dict[cell_type].obs.index.astype(str).tolist(), columns=["donor_id"])
+        patient_df["view"] = cell_type  
+        sample_view_list.append(patient_df)
+
+    combined_df = pd.concat(sample_view_list)
+
+    # Now count how many times each donor_id appears
+    donor_counts = combined_df["donor_id"].value_counts()
+    # Identify donor_ids that appear in at least min_views
+    eligible_donors = donor_counts[donor_counts >= min_views].index.tolist()
+
+    # Now filter each AnnData object to keep only these eligible donors
+    for cell_type, adata in anndata_dict.items():
+        adata_filtered = adata[adata.obs.index.isin(eligible_donors), :].copy()
+        anndata_dict[cell_type] = adata_filtered
+
+
 # Function to identify not highly variable genes (HVGs) for exclusion
 
-
-def get_hvgs(anndata_dict):
+def get_hvgs(anndata_dict, groupby = None, ngroups_cut = 2):
     """
     Identify genes to exclude for each AnnData object, based on HVG masking.
 
@@ -297,18 +343,41 @@ def get_hvgs(anndata_dict):
     ----------
     anndata_dict : dict[str, anndata.AnnData]
         Dictionary with view/cell-type keys and AnnData objects as values.
+    groupby : str, optional
+        Column name in .obs to group by when identifying HVGs. If None, HVGs are identified without grouping.
+    ngroups_cut : int, optional
+        Minimum number of groups (batches) in which a gene must be highly variable to be retained. Only applicable if groupby is not None.
 
     Returns
     -------
     dict[str, list[str]]
-        Dictionary with cell types as keys and lists of highly variable genes to exclude.
+        Dictionary with cell types as keys and lists of not variable genes to be excluded.
     """
-
     genes_to_exclude = {}
 
     for cell_type, adata in anndata_dict.items():
-        # Compute HVGs
-        sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=None, inplace=True)
+        # Compute HVGs for the current anndata
+        # conditioned if groupby is provided
+
+        if groupby is not None:
+            sc.pp.highly_variable_genes(adata, flavor="seurat", 
+                                        n_top_genes=None, inplace=True,
+                                        batch_key=groupby)
+            
+            # Now make the heuristic adjustment to only keep genes that are variable in more than one batch
+            batch_msk = np.array(adata.var['highly_variable_nbatches'] > 1)
+            # Raise an error if there are no HVGs that meet the criteria
+            if not np.any(batch_msk):
+                raise ValueError(f"No highly variable genes found in more than one batch for cell type {cell_type}.")
+            
+            hvg = adata.var[batch_msk].sort_values(['highly_variable_nbatches', 'dispersions_norm'], ascending=[False, False])
+            # Now filter by the number of groups cut based on highly_variable_nbatches
+            hvg = hvg[hvg['highly_variable_nbatches'] >= ngroups_cut].index
+            adata.var['highly_variable'] = np.isin(adata.var.index, hvg)
+            
+        else:
+            sc.pp.highly_variable_genes(adata, flavor="seurat", 
+                                        n_top_genes=None, inplace=True)
 
         # Get the HVGs
         mask = ~adata.var["highly_variable"]
@@ -318,35 +387,30 @@ def get_hvgs(anndata_dict):
 
     return genes_to_exclude
 
-
-# Main function to keep HVGs from all views
-
-
-def filter_hvgs(anndata_dict):
+def filter_hvgs(anndata_dict, groupby = None, ngroups_cut = None):
     """
-    Filter genes in AnnData objects by retaining only highly variable genes (HVGs).
-
-    For each AnnData object in the dictionary, highly variable genes are identified
-    using Scanpy's ``highly_variable_genes`` method. Genes that are not marked as
-    highly variable are removed. After filtering, HVG-related annotation columns
-    are dropped from ``.var``.
-
-    This function modifies the input dictionary in place.
+    Identify highly variable genes (HVGs) for each AnnData object and filter out non-HVGs.
 
     Parameters
     ----------
-    anndata_dict : dict[str, anndata.AnnData]
+    anndata_dict : dict[str, AnnData]
         Dictionary with view or cell-type names as keys and AnnData objects as values.
+    groupby : str, optional
+        Column name in .obs to group by when identifying HVGs. If None, HVGs are identified without grouping.
+    ngroups_cut : int, optional
+        Minimum number of groups (batches) in which a gene must be highly variable to be retained. Only applicable if groupby is not None.
 
     Returns
     -------
     None
-        The input AnnData objects are updated in place.
+        The input AnnData objects are updated in place, with non-HVGs filtered out and HVG-related annotation columns dropped from .var.
     """
-
-    gene_lists = get_hvgs(anndata_dict)
+    gene_lists = get_hvgs(anndata_dict, 
+                          groupby = groupby,
+                          ngroups_cut = ngroups_cut)
 
     filter_genes_by_celltype(anndata_dict, gene_lists)
 
     for _x, y in anndata_dict.items():
         y.var = y.var.drop(["highly_variable", "means", "dispersions", "dispersions_norm"], axis=1)
+

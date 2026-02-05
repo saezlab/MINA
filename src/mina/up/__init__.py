@@ -5,6 +5,7 @@ from .filt import (
     filter_views_by_genes,
     filter_samples_by_coverage,
     filter_genes_by_celltype,
+    filter_smpls_by_nview,
     get_hvgs,
     filter_hvgs,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "filter_views_by_genes",
     "filter_samples_by_coverage",
     "filter_genes_by_celltype",
+    "filter_smpls_by_nview",
     "get_hvgs",
     "filter_hvgs",
     "extract_metadata_from_obs",
