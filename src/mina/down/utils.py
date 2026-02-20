@@ -67,7 +67,7 @@ def model_to_anndata(
     Z_all = pd.concat(Z_list, axis=0)
 
     # Now restrict/reorder to the union of samples you already computed
-    Z = Z_all.reindex(unique_samples)
+    Z = Z_all.reindex(unique_samples)   
 
     # ---------- 4) Explained variance per factor (R^2) ----------
     r2_dict = model.get_r2()
