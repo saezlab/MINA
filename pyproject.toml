@@ -20,7 +20,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "mofaflex @ git+https://github.com/bioFAM/mofaflex.git@main",
+  "mofaflex,
   "decoupler",
   "scanpy"
 ]
