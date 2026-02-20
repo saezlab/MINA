@@ -48,6 +48,7 @@ optional-dependencies.doc = [
 optional-dependencies.test = [
   "coverage>=7.10",
   "pytest",
+  'pytest-cov',
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://MINA.readthedocs.io/"
