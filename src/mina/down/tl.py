@@ -131,7 +131,7 @@ def get_associations(adata, test_variable, test_type=None, random_effect=None):
                 else:
                     # One-way ANOVA
                     df[test_variable] = df[test_variable].astype("category")
-                    groups = [grp.values for _, grp in df.groupby(test_variable)["value"]]
+                    groups = [grp.values for _, grp in df.groupby(test_variable, observed=False)["value"]]
                     if len(groups) < 2:
                         pval = np.nan
                         statval = np.nan
