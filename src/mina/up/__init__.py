@@ -18,6 +18,7 @@ from .utils import (
     save_raw_counts,
     append_view_to_var,
     merge_adata_views,
+    convert_views_to_functions,
 )
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "save_raw_counts",
     "append_view_to_var",
     "merge_adata_views",
+    "convert_views_to_functions",
 ]

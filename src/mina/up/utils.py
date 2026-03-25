@@ -1,6 +1,9 @@
 # Dependencies
 from anndata import AnnData
 import anndata as ad
+import decoupler as dc
+import pandas as pd
+
 # This function saves the raw counts in a layer called 'raw_counts' for each AnnData object in a dictionary
 def save_raw_counts(anndata_dict, layer_name="raw_counts"):
     """
@@ -241,3 +244,43 @@ def merge_adata_views(
         merged[view] = merged_adata
 
     return merged
+
+
+def convert_views_to_functions(anndata_dict, net, tmin = 5):
+    """
+    Applies decoupler's run ulm function to each AnnData object in the input dictionary using the provided network.
+
+    Rewrites the input dictionary in place, replacing each AnnData object with the result of the decoupler analysis.
+
+    Parameters
+    ----------
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary with AnnData objects as values.
+
+    net : pandas.DataFrame
+        Long-format (tidy) DataFrame representing a network, where each row defines
+        an interaction between a source and a target.
+        
+        Required columns:
+        - ``source``: identifier of the source node
+        - ``target``: identifier of the target node
+        
+        Optional columns:
+        - ``weight``: numeric value representing interaction strength
+        
+    tmin : int, default=5
+        Minimum number of targets required per source. Sources with fewer than
+        ``tmin`` associated targets are filtered out.
+
+    Returns
+    -------
+    None
+        The function modifies the input dictionary in place.
+    """
+
+    for cell_type, adata in anndata_dict.items():
+        dc.mt.ulm(data=adata, net=net, tmin=tmin)
+        score = dc.pp.get_obsm(adata=adata, key="score_ulm")
+
+        # Update the dictionary with the filtered AnnData object
+        anndata_dict[cell_type] = score.copy()
