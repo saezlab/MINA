@@ -225,19 +225,10 @@ def merge_adata_views(
             else:
                 obs_cols &= set(a.obs.columns)
 
-        first_obs_order = list(adatas[0].obs.columns)
+        ordered_obs_cols = sorted(c for c in obs_cols if c != "study")
 
-        ordered_obs_cols = [c for c in first_obs_order if c in obs_cols]
-
-        for a in adatas[1:]:
-            for c in a.obs.columns:
-                if c in obs_cols and c not in ordered_obs_cols:
-                    ordered_obs_cols.append(c)
-
-        if "study" in ordered_obs_cols:
-            ordered_obs_cols = [
-                c for c in ordered_obs_cols if c != "study"
-            ] + ["study"]
+        if "study" in obs_cols:
+            ordered_obs_cols.append("study")
 
         merged_adata.obs = merged_adata.obs.loc[:, ordered_obs_cols]
 
