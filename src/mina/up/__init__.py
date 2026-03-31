@@ -19,6 +19,7 @@ from .utils import (
     append_view_to_var,
     merge_adata_views,
     convert_views_to_functions,
+    make_membership_matrix,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "append_view_to_var",
     "merge_adata_views",
     "convert_views_to_functions",
+    "make_membership_matrix",
 ]

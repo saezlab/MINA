@@ -284,3 +284,41 @@ def convert_views_to_functions(anndata_dict, net, tmin = 5):
 
         # Update the dictionary with the filtered AnnData object
         anndata_dict[cell_type] = score.copy()
+
+def make_membership_matrix(adata, pathways_df, gene_col="genesymbol", pathway_col="pathway"):
+    """
+    Build a boolean gene × pathway membership matrix aligned with adata.var.index.
+
+    Parameters
+    ----------
+    adata : anndata.AnnData
+        AnnData object with genes in .var.index
+    pathways_df : pd.DataFrame
+        Long-format DataFrame with at least two columns: gene_col and pathway_col
+    gene_col : str
+        Column in pathways_df containing gene names
+    pathway_col : str
+        Column in pathways_df containing pathway names
+
+    Returns
+    -------
+    pd.DataFrame
+        Boolean DataFrame (rows=adata.var.index, columns=unique pathways)
+    """
+    # Get unique pathways
+    pathways = pathways_df[pathway_col].unique()
+    genes = adata.var.index
+
+    # Initialize matrix
+    membership = pd.DataFrame(False, index=genes, columns=pathways)
+
+    # Fill True where membership exists
+    for pw in pathways:
+        genes_in_pw = pathways_df.loc[pathways_df[pathway_col] == pw, gene_col]
+        membership.loc[membership.index.isin(genes_in_pw), pw] = True
+
+    # Store in .varm
+    adata.varm["pathway_membership"] = membership
+    adata.uns["pathway_names"] = list(membership.columns)  # optional: keep names
+
+    return membership
