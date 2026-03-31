@@ -6,17 +6,17 @@
 [badge-tests]: https://img.shields.io/github/actions/workflow/status/saezlab/MINA/test.yaml?branch=main
 [badge-docs]: https://img.shields.io/readthedocs/MINA
 
-v0 of Multicellular INtegration Analysis
+Multicellular INtegration Analysis
 
 ## Getting started
+`mina` provides a bridge between single-cell data analysis workflows from `scverse`, factor based models from `MOFAflex`, and prior knowledge to generate tissue-centric descriptions from single-cell data.
 
-Please refer to the [documentation][],
-in particular, the [API documentation][].
+This package facilitates the implementation of [Multicellular Factor Analysis](https://elifesciences.org/articles/93161) by providing functions to process and format single-cell data into a multi-view format, together with additional visualization and downstream tasks to analyse and interpret multicellular programs.
 
 ## Installation
 
-You need to have Python 3.13 or newer installed on your system.
-If you don't have Python installed, we recommend installing [uv][].
+You need to have Python 3.12 or newer installed on your system.
+If you don't have Python installed, we recommend installing [uv].
 
 There are several alternative options to install MINA:
 
@@ -31,7 +31,7 @@ pip install MINA
 1. Install the latest development version:
 
 ```bash
-pip install git+https://github.com/saezlab/MINA.git@main
+pip install git+https://github.com/saezlab/MINA.git@refact_dev
 ```
 
 ## Release notes

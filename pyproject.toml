@@ -14,17 +14,23 @@ maintainers = [
 authors = [
   { name = "Klaus Kruger" },
 ]
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.12,<3.14"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "mofaflex @ git+https://github.com/bioFAM/mofaflex.git@main",
+  "mofaflex",
   "decoupler",
   "scanpy"
 ]
+
+optional-dependencies.extra = [
+  "liana", # required for ligand-receptor networks
+]
+
 optional-dependencies.dev = [
+  "ruff",
   "pre-commit",
   "twine>=4.0.2",
 ]
@@ -48,6 +54,7 @@ optional-dependencies.doc = [
 optional-dependencies.test = [
   "coverage>=7.10",
   "pytest",
+  'pytest-cov',
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://MINA.readthedocs.io/"

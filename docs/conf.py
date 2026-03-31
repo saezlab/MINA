@@ -35,6 +35,7 @@ nitpicky = False  # Warn about broken links
 warnings_are_errors = False
 suppress_warnings = [
     "toc.not_included",
+    "myst.header",
 ]
 
 needs_sphinx = "4.0"

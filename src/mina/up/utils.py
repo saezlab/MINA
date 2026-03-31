@@ -1,5 +1,8 @@
 # Dependencies
 from anndata import AnnData
+import anndata as ad
+import decoupler as dc
+import pandas as pd
 
 # This function saves the raw counts in a layer called 'raw_counts' for each AnnData object in a dictionary
 def save_raw_counts(anndata_dict, layer_name="raw_counts"):
@@ -130,6 +133,7 @@ def merge_adata_views(
 
     n_studies = len(studies)
 
+
     view_counts = {}
     for study in studies:
         for view in study.keys():
@@ -144,9 +148,8 @@ def merge_adata_views(
     else:
         raise ValueError(f"Unknown view_mode: {view_mode}")
 
-    view_to_adatas = {}
-    for view in keep_views:
-        view_to_adatas[view] = []
+
+    view_to_adatas = {view: [] for view in keep_views}
 
     for study_name, study in zip(study_names, studies):
         for view in keep_views:
@@ -158,6 +161,7 @@ def merge_adata_views(
     merged = {}
 
     for view, adatas in view_to_adatas.items():
+
         if len(adatas) == 1:
             merged_adata = adatas[0].copy()
         else:
@@ -168,22 +172,51 @@ def merge_adata_views(
                 merge="unique"
             )
 
-            if var_mode in {"inner", "min_n"}:
-                var_counts = {}
-                for a in adatas:
-                    for v in a.var_names:
-                        var_counts[v] = var_counts.get(v, 0) + 1
+        if len(adatas) > 1:
 
-                if var_mode == "inner":
-                    keep_vars = {
-                        v for v, c in var_counts.items() if c == len(adatas)
-                    }
-                else:  # min_n
-                    keep_vars = {
-                        v for v, c in var_counts.items() if c >= min_var_studies
-                    }
+            var_counts = {}
+            for a in adatas:
+                for v in a.var_names:
+                    var_counts[v] = var_counts.get(v, 0) + 1
 
-                merged_adata = merged_adata[:, sorted(keep_vars)]
+            first_var_order = list(adatas[0].var_names)
+
+            if var_mode == "inner":
+                keep_vars_set = {v for v, c in var_counts.items() if c == len(adatas)}
+
+            elif var_mode == "min_n":
+                keep_vars_set = {v for v, c in var_counts.items() if c >= min_var_studies}
+
+            elif var_mode == "outer":
+                keep_vars_set = set(var_counts.keys())
+
+            else:
+                raise ValueError(f"Unknown var_mode: {var_mode}")
+
+            ordered_vars = [v for v in first_var_order if v in keep_vars_set]
+            for a in adatas[1:]:
+                for v in a.var_names:
+                    if v in keep_vars_set and v not in ordered_vars:
+                        ordered_vars.append(v)
+
+            merged_adata = merged_adata[:, ordered_vars]
+
+            var_frames = []
+            for a in adatas:
+                df = a.var.copy()
+                df = df.loc[df.index.intersection(ordered_vars)]
+                var_frames.append(df)
+
+            combined_var = (
+                pd.concat(var_frames)
+                .loc[~pd.concat(var_frames).index.duplicated(keep="first")]
+            )
+
+            # Reindex to ensure full ordered_vars coverage
+            combined_var = combined_var.reindex(ordered_vars)
+
+            merged_adata.var = combined_var
+
 
         obs_cols = None
         for a in adatas:
@@ -192,7 +225,100 @@ def merge_adata_views(
             else:
                 obs_cols &= set(a.obs.columns)
 
-        merged_adata.obs = merged_adata.obs.loc[:, sorted(obs_cols)]
+        first_obs_order = list(adatas[0].obs.columns)
+
+        ordered_obs_cols = [c for c in first_obs_order if c in obs_cols]
+
+        for a in adatas[1:]:
+            for c in a.obs.columns:
+                if c in obs_cols and c not in ordered_obs_cols:
+                    ordered_obs_cols.append(c)
+
+        if "study" in ordered_obs_cols:
+            ordered_obs_cols = [
+                c for c in ordered_obs_cols if c != "study"
+            ] + ["study"]
+
+        merged_adata.obs = merged_adata.obs.loc[:, ordered_obs_cols]
+
         merged[view] = merged_adata
 
     return merged
+
+
+def convert_views_to_functions(anndata_dict, net, tmin = 5):
+    """
+    Applies decoupler's run ulm function to each AnnData object in the input dictionary using the provided network.
+
+    Rewrites the input dictionary in place, replacing each AnnData object with the result of the decoupler analysis.
+
+    Parameters
+    ----------
+    anndata_dict : dict[str, anndata.AnnData]
+        Dictionary with AnnData objects as values.
+
+    net : pandas.DataFrame
+        Long-format (tidy) DataFrame representing a network, where each row defines
+        an interaction between a source and a target.
+        
+        Required columns:
+        - ``source``: identifier of the source node
+        - ``target``: identifier of the target node
+        
+        Optional columns:
+        - ``weight``: numeric value representing interaction strength
+        
+    tmin : int, default=5
+        Minimum number of targets required per source. Sources with fewer than
+        ``tmin`` associated targets are filtered out.
+
+    Returns
+    -------
+    None
+        The function modifies the input dictionary in place.
+    """
+
+    for cell_type, adata in anndata_dict.items():
+        dc.mt.ulm(data=adata, net=net, tmin=tmin)
+        score = dc.pp.get_obsm(adata=adata, key="score_ulm")
+
+        # Update the dictionary with the filtered AnnData object
+        anndata_dict[cell_type] = score.copy()
+
+def make_membership_matrix(adata, pathways_df, gene_col="genesymbol", pathway_col="pathway"):
+    """
+    Build a boolean gene × pathway membership matrix aligned with adata.var.index.
+
+    Parameters
+    ----------
+    adata : anndata.AnnData
+        AnnData object with genes in .var.index
+    pathways_df : pd.DataFrame
+        Long-format DataFrame with at least two columns: gene_col and pathway_col
+    gene_col : str
+        Column in pathways_df containing gene names
+    pathway_col : str
+        Column in pathways_df containing pathway names
+
+    Returns
+    -------
+    pd.DataFrame
+        Boolean DataFrame (rows=adata.var.index, columns=unique pathways)
+    """
+    # Get unique pathways
+    pathways = pathways_df[pathway_col].unique()
+    genes = adata.var.index
+
+    # Initialize matrix
+    membership = pd.DataFrame(False, index=genes, columns=pathways)
+
+    # Fill True where membership exists
+    for pw in pathways:
+        genes_in_pw = pathways_df.loc[pathways_df[pathway_col] == pw, gene_col]
+        membership.loc[membership.index.isin(genes_in_pw), pw] = True
+
+    # Store in .varm
+    adata.varm["pathway_membership"] = membership
+    adata.uns["pathway_names"] = list(membership.columns)  # optional: keep names
+
+    return membership

@@ -497,7 +497,8 @@ def plot_mcell_network(
     arrows_on_top: bool = True,
 ):
     """
-    PLACEHOLDER
+    Given the inference of a multicellular information network, plot the resulting directed graph with edges colored and scaled by weight.
+    The results are shown solely from one subset (positive or negative loadings).
 
     Parameters
     ----------
@@ -656,5 +657,104 @@ def plot_mcell_network(
     return G
 
 
+def plot_features_per_view(
+    df_dict: dict[str, pd.DataFrame],
+    features: list[str],
+    cmap: str = "coolwarm",
+    figsize: tuple[int, int] = (14, 5),
+    ytick_rotation: int = 0,
+    xtick_rotation: int = 90,
+    share_color_scale: bool = True,
+):
+    """
+    Plot grouped heatmaps for selected features across multiple views.
 
+    Each entry in ``df_dict`` is a dataframe for one view, with rows as samples
+    and columns as features. For each view, only the requested features present
+    in the dataframe are plotted.
+
+    Parameters
+    ----------
+    df_dict : dict[str, pandas.DataFrame]
+        Dictionary mapping view names to dataframes of shape
+        ``n_samples × n_features``.
+    features : list[str]
+        Features of interest to plot across views.
+    cmap : str
+        Colormap for the heatmaps.
+    figsize : tuple[int, int]
+        Overall figure size.
+    ytick_rotation : int
+        Rotation angle for y-axis tick labels.
+    xtick_rotation : int
+        Rotation angle for x-axis tick labels.
+    share_color_scale : bool
+        If True, use a common color scale across all views.
+
+    Returns
+    -------
+    None
+        Displays the plot.
+    """
+    filtered_data = {}
+    views = []
+
+    # Keep only views with at least one requested feature
+    for view, df in df_dict.items():
+        view_features = [f for f in features if f in df.columns]
+        if len(view_features) == 0:
+            continue
+
+        filtered_data[view] = df[view_features]
+        views.append(view)
+
+    if len(views) == 0:
+        print("No requested features were found in any view.")
+        return
+
+    # Global color scale if requested
+    if share_color_scale:
+        all_vals = pd.concat(filtered_data.values(), axis=1)
+        vmin, vmax = all_vals.min().min(), all_vals.max().max()
+    else:
+        vmin, vmax = None, None
+
+    fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(1, len(views), wspace=0.4)
+
+    for i, view in enumerate(views):
+        plot_data = filtered_data[view]
+
+        ax = fig.add_subplot(gs[i])
+        sns.heatmap(
+            plot_data,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+            cbar=False,
+            ax=ax,
+            xticklabels=True,
+            yticklabels=(i == 0),
+        )
+
+        ax.set_title(view, fontsize=10)
+        ax.tick_params(axis="x", labelsize=7, rotation=xtick_rotation)
+        ax.tick_params(axis="y", labelsize=7, rotation=ytick_rotation)
+
+        if i > 0:
+            ax.set_ylabel("")
+
+    # Shared colorbar
+    if share_color_scale:
+        cbar_ax = fig.add_axes([0.92, 0.3, 0.02, 0.5])
+        norm = plt.Normalize(vmin=vmin, vmax=vmax)
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        fig.colorbar(sm, cax=cbar_ax)
+
+        plt.tight_layout(rect=[0, 0, 0.9, 1])
+    else:
+        plt.tight_layout()
+
+    plt.show()
 

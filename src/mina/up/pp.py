@@ -37,7 +37,7 @@ def extract_metadata_from_obs(obs: pd.DataFrame, groupby: str, sort: bool = Fals
 
         # Group values and check if each group has only one unique value
         is_stable = (
-            obs.groupby(groupby)[col]
+            obs.groupby(groupby, observed=False)[col]
             .apply(lambda x: x.dropna().nunique() <= 1)
             .all()
         )
@@ -49,7 +49,7 @@ def extract_metadata_from_obs(obs: pd.DataFrame, groupby: str, sort: bool = Fals
         print("⚠️ No stable columns found other than the group ID.")
 
     # Now collect the first value from each group for these columns
-    metadata = obs.groupby(groupby)[stable_cols].first().reset_index()
+    metadata = obs.groupby(groupby, observed=False)[stable_cols].first().reset_index()
 
     metadata = metadata.set_index(groupby, drop=False)
 
