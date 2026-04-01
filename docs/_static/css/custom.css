@@ -1,3 +1,71 @@
+:root {
+    --md-primary-fg-color: #1d4ea8;
+    --md-primary-fg-color--light: #3f7bd8;
+    --md-primary-fg-color--dark: #173d84;
+
+    --md-accent-fg-color: #0f8b8d;
+    --md-accent-fg-color--transparent: rgba(15, 139, 141, 0.12);
+
+    --mina-bg-soft: #f2efe5;
+    --mina-bg-warm: #e9e3d2;
+    --mina-text: #4a4547;
+    --mina-navy: #1f2b58;
+}
+
+body {
+    color: var(--mina-text);
+}
+
+.md-header,
+.md-tabs {
+    background: linear-gradient(90deg, #1f2b58 0%, #1d4ea8 58%, #0f8b8d 100%);
+}
+
+.md-main {
+    background:
+        radial-gradient(circle at top right, rgba(15, 139, 141, 0.08), transparent 28%),
+        linear-gradient(180deg, #ffffff 0%, var(--mina-bg-soft) 100%);
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+    color: var(--mina-navy);
+}
+
+.md-typeset a {
+    color: var(--md-accent-fg-color);
+}
+
+.md-typeset a:hover {
+    color: var(--mina-navy);
+}
+
+.md-typeset code {
+    background-color: rgba(29, 78, 168, 0.08);
+}
+
+.md-typeset blockquote {
+    border-left: 0.2rem solid var(--md-accent-fg-color);
+    background: rgba(242, 239, 229, 0.7);
+}
+
+.md-typeset .admonition,
+.md-typeset details {
+    border-color: rgba(15, 139, 141, 0.22);
+    background-color: rgba(242, 239, 229, 0.55);
+}
+
+.md-search__form {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.md-nav__link--active,
+.md-nav__link:hover {
+    color: var(--md-accent-fg-color);
+}
+
 /* Reduce the font size in data frames - See https://github.com/scverse/cookiecutter-scverse/issues/193 */
 div.cell_output table.dataframe {
     font-size: 0.8em;

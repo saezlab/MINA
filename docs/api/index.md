@@ -1,20 +1,13 @@
 # API
 
-Import mina as:
+Import MINA as:
 
 ```
-import mina as mina
+import mina
 ```
 
-```{toctree}
-:maxdepth: 2
+The reference is grouped into:
 
-up
-down
-```
-
-```{toctree}
-:maxdepth: 1
-
-pl
-```
+- [Upstream](up.md): filtering, preprocessing, and utility functions.
+- [Downstream](down.md): analysis and model-conversion helpers.
+- [Plotting](pl.md): visualization helpers for views, coverage, and networks.

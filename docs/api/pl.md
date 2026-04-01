@@ -1,16 +1,13 @@
 # Plotting
 
-```{eval-rst}
-.. module:: mina.pl
-.. currentmodule:: mina
+::: mina.pl.plot_view_samples
 
-.. autosummary::
-    :toctree: generated
+::: mina.pl.plot_view_genes
 
-    pl.plot_view_samples
-    pl.plot_view_genes
-    pl.plot_sample_coverage
-    pl.plot_pval_tiles
-    pl.plot_mcell_funcomics
-    pl.plot_mcell_network
-```
+::: mina.pl.plot_sample_coverage
+
+::: mina.pl.plot_pval_tiles
+
+::: mina.pl.plot_mcell_funcomics
+
+::: mina.pl.plot_mcell_network

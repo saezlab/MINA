@@ -1,48 +1,37 @@
 # Upstream
 
 ## Filtering
-```{eval-rst}
-.. currentmodule:: mina.up
 
-.. autosummary::
-    :toctree: generated
-    :nosignatures:
+::: mina.up.filter_anndata_by_ncells
 
-    filter_anndata_by_ncells
-    filter_views_by_samples
-    filter_genes_byexpr
-    filter_views_by_genes
-    filter_samples_by_coverage
-    filter_genes_by_celltype
-    filter_smpls_by_nview
-    get_hvgs
-    filter_hvgs
-```
+::: mina.up.filter_views_by_samples
+
+::: mina.up.filter_genes_byexpr
+
+::: mina.up.filter_views_by_genes
+
+::: mina.up.filter_samples_by_coverage
+
+::: mina.up.filter_genes_by_celltype
+
+::: mina.up.filter_smpls_by_nview
+
+::: mina.up.get_hvgs
+
+::: mina.up.filter_hvgs
 
 ## Preprocessing
 
-```{eval-rst}
-.. currentmodule:: mina.up
+::: mina.up.extract_metadata_from_obs
 
-.. autosummary::
-    :toctree: generated
-    :nosignatures:
+::: mina.up.split_anndata_by_celltype
 
-    extract_metadata_from_obs
-    split_anndata_by_celltype
-    norm_log
-```
+::: mina.up.norm_log
 
 ## Utils
 
-```{eval-rst}
-.. currentmodule:: mina.up
+::: mina.up.save_raw_counts
 
-.. autosummary::
-    :toctree: generated
-    :nosignatures:
+::: mina.up.append_view_to_var
 
-    save_raw_counts
-    append_view_to_var
-    merge_adata_views
-```
+::: mina.up.merge_adata_views

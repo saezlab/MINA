@@ -10,9 +10,11 @@ readme = "README.md"
 license = { file = "LICENSE" }
 maintainers = [
   { name = "Klaus Kruger", email = "klaus.kruger@stud.uni-heidelberg.de" },
+  { name = "Ricardo Omar Ramirez Flores", email = "flores@ebi.ac.uk" },
 ]
 authors = [
   { name = "Klaus Kruger" },
+  { name = "Ricardo Omar Ramirez Flores", email = "flores@ebi.ac.uk" },
 ]
 requires-python = ">=3.12,<3.14"
 classifiers = [
@@ -20,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "mofaflex",
+  "mofaflex==0.1.0.post1",
   "decoupler",
   "scanpy"
 ]
@@ -35,21 +37,14 @@ optional-dependencies.dev = [
   "twine>=4.0.2",
 ]
 optional-dependencies.doc = [
-  "docutils>=0.8,!=0.18.*,!=0.19.*",
   "ipykernel",
   "ipython",
-  "myst-nb>=1.1",
-  "myst-parser<5",
+  "mkdocs>=1.6,<2",
+  "mkdocs-jupyter>=0.26,<0.27",
+  "mkdocs-material>=9.7.5,<10",
+  "mkdocstrings[python]>=1,<2",
+  "pymdown-extensions",
   "pandas",
-  # Until pybtex >0.24.0 releases: https://bitbucket.org/pybtex-devs/pybtex/issues/169/
-  "setuptools",
-  "sphinx>=4",
-  "sphinx-autodoc-typehints",
-  "sphinx-book-theme>=1",
-  "sphinx-copybutton",
-  "sphinx-tabs",
-  "sphinxcontrib-bibtex>=1",
-  "sphinxext-opengraph",
 ]
 optional-dependencies.test = [
   "coverage>=7.10",
@@ -57,7 +52,7 @@ optional-dependencies.test = [
   'pytest-cov',
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
-urls.Documentation = "https://MINA.readthedocs.io/"
+urls.Documentation = "https://saezlab.github.io/mina/"
 urls.Homepage = "https://github.com/saezlab/MINA"
 urls.Source = "https://github.com/saezlab/MINA"
 
@@ -73,12 +68,12 @@ features = [ "dev" ]
 
 [tool.hatch.envs.docs]
 dependencies = [
-  "sphinx<9.0"
+  "mkdocs>=1.6,<2"
 ]
 features = [ "doc" ]
-scripts.build = "sphinx-build -M html docs docs/_build -W {args}"
-scripts.open = "python -m webbrowser -t docs/_build/html/index.html"
-scripts.clean = "git clean -fdX -- {args:docs}"
+scripts.build = "mkdocs build --clean --strict {args}"
+scripts.open = "python -m webbrowser -t site/index.html"
+scripts.clean = "git clean -fdX -- {args:site}"
 
 # Test the lowest and highest supported Python versions with normal deps
 [[tool.hatch.envs.hatch-test.matrix]]
