@@ -30,7 +30,7 @@ pip install MINA
 1. Install the latest development version:
 
 ```bash
-pip install git+https://github.com/saezlab/MINA.git@refact_dev
+pip install git+https://github.com/saezlab/MINA.git@main
 ```
 
 ## Citation
