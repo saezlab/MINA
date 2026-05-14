@@ -18,7 +18,6 @@ from statsmodels.stats.multitest import multipletests
 
 from mina.down.utils import split_by_view
 
-
 # Funcomics to multiviews
 
 
@@ -44,7 +43,6 @@ def run_ulm_per_view(
         Dictionary mapping view names to result dictionaries containing
         pathway activities (``pw_acts``) and adjusted p-values (``pw_padj``).
     """
-
     results = {}
 
     for view, data in view_dict.items():
@@ -88,7 +86,6 @@ def get_associations(adata, test_variable, test_type=None, random_effect=None):
     pandas.DataFrame
         DataFrame with columns ``feature``, ``p_value``, and ``adj_p_value``.
     """
-
     # Extract observation DataFrame
     obs = adata.obs.copy()
 
@@ -201,7 +198,6 @@ def calc_total_variance(adata, associations_df, pval_thrs=0.05):
         Dictionary mapping each view/group name to a Series containing the summed
         explained variance per factor across significant features.
     """
-
     expl_var_dict = split_by_view(adata.var.copy())
     p = associations_df.set_index("feature")["adj_p_value"]
     sig_factors = p[p < pval_thrs].index
@@ -286,7 +282,6 @@ def get_loading_gset(col, source_base: str, percentile: float = 0.85) -> pd.Data
     pandas.DataFrame
         DataFrame containing the selected gene set.
     """
-
     s = col.squeeze().dropna()  # ensure Series
 
     # positives
@@ -341,7 +336,6 @@ def build_info_networks(
         Table with columns:
         ``target, predictor, coef, R2, cor_estimate, n_samples, model_type``.
     """
-
     results = []
 
     Xmat = multicell_scores.copy()
@@ -457,8 +451,7 @@ def get_multicell_net(
     -------
     dict[str, pandas.DataFrame]
         Dictionary mapping interaction direction to inferred network tables.
-    """
-
+    """  # noqa: D205
     # First, extract top genes for each factor
     # Get the gene loadings from the test model
     W = test_model.varm["gene_loadings"]
@@ -648,7 +641,6 @@ def project_wide_to_factors(
     anndata.AnnData
         AnnData object with projected factor scores in ``.X``.
     """
-
     # -- 0) Normalize inputs
     if isinstance(wide, pd.DataFrame):
         X = wide.values

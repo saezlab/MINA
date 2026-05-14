@@ -32,7 +32,6 @@ def model_to_anndata(
         AnnData object containing factor scores, metadata, gene loadings,
         and aligned pseudobulk matrices.
     """
-
     # ---------- 1) Collect unique sample IDs present in any view ----------
     if not anndata_dict:
         raise ValueError("anndata_dict is empty. Provide at least one AnnData view.")
