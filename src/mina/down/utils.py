@@ -68,31 +68,41 @@ def model_to_anndata(
     # Now restrict/reorder to the union of samples you already computed
     Z = Z_all.reindex(unique_samples)
 
-    # ---------- 4) Explained variance per factor (R^2) ----------
-    r2_dict = model.get_r2()
-    if not isinstance(r2_dict, dict) or len(r2_dict) == 0:
-        raise ValueError("model.get_r2() returned no groups.")
+        # ---------- 4) Explained variance per factor (R^2) ----------
+    # model.get_r2() -> DataFrame with columns:
+    # group, view, component, R2
+    r2_df = model.get_r2()
 
-    r2_frames = []
-    for g, r2_df in r2_dict.items():
-        r2_g = r2_df.copy()
-        # clean factor names in the index so they match Z's column names
-        r2_g.index = [_clean_factor(ix) for ix in r2_g.index]
-        # encode group in the *columns* as "<view>:<group>"
-        r2_g.columns = [f"{col}:{g}" for col in r2_g.columns.astype(str)]
-        r2_frames.append(r2_g)
+    if not isinstance(r2_df, pd.DataFrame) or r2_df.empty:
+        raise ValueError("model.get_r2() returned no R2 values.")
 
-    # Combine all groups along columns:
-    #   rows = factors
-    #   columns = view:group R²
-    X = pd.concat(r2_frames, axis=1)
+    required_cols = {"group", "view", "component", "R2"}
+    missing = required_cols - set(r2_df.columns)
+    if missing:
+        raise ValueError(f"model.get_r2() is missing required columns: {missing}")
 
-    # Finally, ensure the rows of X match the order of Z's columns (factors)
+    r2_long = r2_df.copy()
+
+    # Clean factor/component names so they match Z.columns
+    r2_long["component"] = r2_long["component"].map(_clean_factor)
+
+    # Encode R2 columns as "<view>:<group>", as in the previous implementation
+    r2_long["view_group"] = (
+        r2_long["view"].astype(str) + ":" + r2_long["group"].astype(str)
+    )
+
+    # Convert long format to factor × view_group matrix
+    X = r2_long.pivot(
+        index="component",
+        columns="view_group",
+        values="R2",
+    )
+
+    X.index.name = None
+    X.columns.name = None
+
+    # Ensure rows match the factor order in Z
     X = X.reindex(Z.columns)
-
-    # Reorder rows of X to match the order of Z's columns (factors)
-    # This ensures .var aligns with AnnData's columns (factors)
-    # X = X.reindex(Z.columns)
 
     # ---------- 5) Feature weights (gene loadings) ----------
     # model.get_weights() -> dict: view_name -> DataFrame (features × factors)
@@ -102,11 +112,10 @@ def model_to_anndata(
 
     # Transpose each to factors × features, then concat by keys -> MultiIndex (view_name, feature)
     W = {view: df.T for view, df in W_raw.items()}
-    gene_weights = pd.concat(W)  # rows = factors, cols = features, stacked by view on the row index
+    gene_weights = pd.concat(W.values(), axis =1)  # rows = factors, cols = features, stacked by view on the row index
+    gene_weights.index = [_clean_factor(c) for c in gene_weights.index]  # rows = factors, cols = features, stacked by view on the row index
     # Ensure rows of gene_weights (factors) match Z.columns order
-    gene_weights = gene_weights.T
-
-    # else: if no MultiIndex (unlikely for concat with keys), leave as-is
+    #gene_weights = gene_weights.T
 
     # ---------- 6) Build the AnnData (samples × factors) ----------
     # Convert Z to dense numpy. Handle potential sparse matrices defensively.
