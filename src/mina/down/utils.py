@@ -174,7 +174,6 @@ def split_by_view(arch_gex: pd.DataFrame) -> dict[str, pd.DataFrame]:
         Dictionary mapping view names to DataFrames containing only
         features from that view.
     """
-
     # Check all column names contain ':'
     if not all(":" in col for col in arch_gex.columns):
         raise ValueError("All column names must be in the format 'view:feature'")

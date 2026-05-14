@@ -22,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "mofaflex==0.1.0.post1",
+  "mofaflex",
   "decoupler",
   "scanpy"
 ]
