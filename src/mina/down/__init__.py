@@ -8,10 +8,12 @@ from .tl import (
     get_multicell_net,
     multiview_to_wide,
     project_wide_to_factors,
+    lr_usage,
 )
 from .utils import (
     model_to_anndata,
     split_by_view,
+    restore_anns_factor,
 )
 
 __all__ = ["run_ulm_per_view",
@@ -25,4 +27,6 @@ __all__ = ["run_ulm_per_view",
     "project_wide_to_factors",
     "model_to_anndata",
     "split_by_view",
+    "lr_usage",
+    "restore_anns_factor"
 ]

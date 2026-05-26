@@ -165,6 +165,55 @@ def model_to_anndata(
 
     return model_adata
 
+def restore_anns_factor(
+    factor_names,
+    annotation_source,
+    *,
+    strict=True,
+):
+    """
+    Replace long guided factor names with their original annotation names.
+
+    Assumes each annotation source maps to at most one factor name by suffix match.
+
+    Parameters
+    ----------
+    factor_names
+        Iterable of current factor names, e.g. model.factor_names.
+    annotation_source
+        Series/list/array with original annotation names, e.g. annotation.source.
+    strict
+        If True, raise an error when one annotation source matches multiple factors.
+
+    Returns
+    -------
+    np.ndarray
+        Factor names with matched long names replaced.
+    """
+    factor_names = np.asarray(factor_names, dtype=object)
+    sources = pd.Series(annotation_source).dropna().drop_duplicates().astype(str)
+
+    new_names = factor_names.copy()
+
+    for source in sources:
+        matches = [
+            i for i, name in enumerate(factor_names)
+            if str(name) == source or str(name).endswith(f"_{source}")
+        ]
+
+        if len(matches) == 0:
+            continue
+
+        if strict and len(matches) > 1:
+            raise ValueError(
+                f"Annotation source {source!r} matched multiple factors: "
+                f"{factor_names[matches].tolist()}"
+            )
+
+        for i in matches:
+            new_names[i] = "Factor" + source
+
+    return new_names
 
 def split_by_view(arch_gex: pd.DataFrame) -> dict[str, pd.DataFrame]:
     """

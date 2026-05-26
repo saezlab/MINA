@@ -4,8 +4,8 @@ requires = [ "hatchling" ]
 
 [project]
 name = "mina"
-version = "0.0.1"
-description = "v0 of Multicellular INtegration Analysis"
+version = "0.1.0"
+description = "Multicellular INtegration Analysis"
 readme = "README.md"
 license = { file = "LICENSE" }
 maintainers = [

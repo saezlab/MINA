@@ -1,5 +1,6 @@
 # Dependencies
 import matplotlib.gridspec as gridspec
+from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -543,7 +544,6 @@ def plot_mcell_network(
     matplotlib.figure.Figure or None
         The generated figure, or None if not returned explicitly.
     """
-
     required_cols = {"target", "predictor", weight_col}
     missing = required_cols - set(df.columns)
     if missing:
@@ -758,3 +758,180 @@ def plot_features_per_view(
 
     plt.show()
 
+def plot_comm_overview(
+    plot_df,
+    tile_width=0.6,
+    tile_height=0.6,
+    text_size=5,
+    figsize=None,
+    source_label="source",
+    target_label="target",
+    ax=None,
+):
+    """
+    Plot ligand-receptor coherent interactions as source/target tiles.
+
+    Parameters
+    ----------
+    plot_df : pd.DataFrame
+        Output from `generate_lr_plot_df`.
+
+    tile_width : float
+        Width of each rectangular tile.
+
+    tile_height : float
+        Height of each rectangular tile.
+
+    text_size : float
+        Font size of + / - labels inside tiles.
+
+    figsize : tuple or None
+        Matplotlib figure size. If None, size is inferred from data dimensions.
+
+    source_label : str
+        Label for source side of x-axis.
+
+    target_label : str
+        Label for target side of x-axis.
+
+    ax : matplotlib.axes.Axes or None
+        Existing axis to plot into.
+
+    Returns
+    -------
+    fig, ax
+    """
+
+    required_cols = {
+        "source",
+        "target",
+        "interaction",
+        "coherent_sign",
+    }
+
+    missing_cols = required_cols - set(plot_df.columns)
+
+    if missing_cols:
+        raise ValueError(f"`plot_df` is missing required columns: {missing_cols}")
+
+    if plot_df.empty:
+        raise ValueError("`plot_df` is empty. Nothing to plot.")
+
+    interaction_order = (
+        plot_df["interaction"]
+        .drop_duplicates()
+        .tolist()
+    )
+
+    source_order = plot_df["source"].drop_duplicates().tolist()
+    target_order = plot_df["target"].drop_duplicates().tolist()
+
+    source_x = {
+        source: i
+        for i, source in enumerate(source_order)
+    }
+
+    target_x = {
+        target: i + len(source_order) + 1
+        for i, target in enumerate(target_order)
+    }
+
+    y_pos = {
+        interaction: i
+        for i, interaction in enumerate(interaction_order[::-1])
+    }
+
+    if figsize is None:
+        width = max(6, 0.35 * (len(source_order) + len(target_order) + 1))
+        height = max(4, 0.35 * len(interaction_order))
+        figsize = (width, height)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = ax.figure
+
+    sign_colors = {
+        1: "#3b82f6",    # positive
+        -1: "#7e22ce",  # negative
+    }
+
+    for _, row in plot_df.iterrows():
+
+        y = y_pos[row["interaction"]]
+        sign = int(row["coherent_sign"])
+
+        if sign not in sign_colors:
+            continue
+
+        color = sign_colors[sign]
+        label = "+" if sign > 0 else "-"
+
+        x_values = [
+            source_x[row["source"]],
+            target_x[row["target"]],
+        ]
+
+        for x in x_values:
+
+            ax.add_patch(
+                Rectangle(
+                    (x - tile_width / 2, y - tile_height / 2),
+                    tile_width,
+                    tile_height,
+                    facecolor=color,
+                    edgecolor="none",
+                )
+            )
+
+            ax.text(
+                x,
+                y,
+                label,
+                ha="center",
+                va="center",
+                color="white",
+                fontsize=text_size,
+                fontweight="bold",
+            )
+
+    # x-axis labels
+    x_labels = source_order + [""] + target_order
+
+    x_positions = (
+        list(range(len(source_order)))
+        + [len(source_order)]
+        + list(target_x.values())
+    )
+
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(x_labels, rotation=45, ha="right")
+
+    # y-axis labels
+    ax.set_yticks(list(y_pos.values()))
+    ax.set_yticklabels(list(y_pos.keys()))
+
+    # panel separators
+    ax.axvline(len(source_order) - 0.5, color="black", linewidth=1)
+    ax.axvline(len(source_order) + 0.5, color="black", linewidth=1)
+
+    # limits
+    ax.set_xlim(
+        -0.5,
+        len(source_order) + len(target_order) + 0.5,
+    )
+
+    ax.set_ylim(
+        -0.5,
+        len(interaction_order) - 0.5,
+    )
+
+    ax.set_xlabel(f"{source_label} / {target_label}")
+    ax.set_facecolor("#d1d5db")
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.tight_layout()
+
+    return fig, ax

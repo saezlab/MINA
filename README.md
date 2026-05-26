@@ -15,7 +15,14 @@ This package facilitates the implementation of [Multicellular Factor Analysis](h
 
 You need to have Python 3.12 or newer installed on your system.
 If you don't have Python installed, we recommend installing [uv].
-MINA currently targets `mofaflex==0.1.0.post1`.
+
+MINA currently targets the development version of MOFA-FLEX.
+
+## Version status
+
+MINA is currently pre-1.0. APIs may change between minor versions.
+
+The `0.1.x` series introduces a revised API and is not fully backward-compatible with `0.0.x`.
 
 There are several alternative options to install MINA:
 

@@ -696,3 +696,210 @@ def project_wide_to_factors(
         proj_ad.obs = proj_ad.obs.join(ann, how="left", on="sample")
 
     return proj_ad
+
+def lr_usage(
+    gene_loadings,
+    resource,
+    network_df,
+    sel_factor,
+    weight_col="cor_estimate",
+    abs_cutoff=0.2,
+    keep_negative=False,
+    loading_type="positive",
+    n_top=None,
+):
+    """
+    Recover ligand-receptor interactions constrained by a coordination network and coherent loading signs.
+    This means that the ligand and receptor must both have loadings of the same sign (positive or negative) 
+    in their respective source and target cell types.
+
+    Parameters
+    ----------
+    gene_loadings : dict[str, pd.DataFrame]
+        Dictionary where keys are cell types and values are loading dataframes.
+        Each dataframe is expected to have factors as rows and genes as columns.
+
+    resource : pd.DataFrame
+        Ligand-receptor resource with at least columns:
+        - ligand
+        - receptor
+
+    network_df : pd.DataFrame
+        Source-target network with at least columns:
+        - target
+        - predictor
+        - weight_col
+
+    sel_factor : str
+        Factor to extract from each cell-type loading dataframe.
+
+    weight_col : str
+        Column in `network_df` used to filter allowed source-target pairs.
+
+    abs_cutoff : float
+        Minimum absolute network weight.
+
+    keep_negative : bool
+        If False, only positive source-target network weights are kept.
+
+    loading_type : {"positive", "negative", "both"}
+        Which coherent ligand-receptor loading signs to retain.
+
+    n_top : int or None
+        Number of top unique ligand-receptor interactions to retain.
+        If None, all interactions are retained.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe ready to pass to `plot_lr_tiles`.
+    """
+    if loading_type not in {"positive", "negative", "both"}:
+        raise ValueError("loading_type must be one of: 'positive', 'negative', 'both'.")
+
+    missing_factors = [
+        cell_type
+        for cell_type, loadings in gene_loadings.items()
+        if sel_factor not in loadings.index
+    ]
+
+    if missing_factors:
+        raise ValueError(
+            f"`sel_factor={sel_factor}` is missing from: {missing_factors}"
+        )
+
+    # 1. bind selected factor loadings across cell types
+    bound_loadings = pd.concat(
+        [
+            loadings.loc[[sel_factor]].rename(index={sel_factor: cell_type})
+            for cell_type, loadings in gene_loadings.items()
+        ],
+        axis=0,
+    )
+
+    # 2. keep only ligands/receptors present in loadings
+    ligands_list = [
+        ligand
+        for ligand in resource["ligand"].dropna().unique().tolist()
+        if ligand in bound_loadings.columns
+    ]
+
+    receptors_list = [
+        receptor
+        for receptor in resource["receptor"].dropna().unique().tolist()
+        if receptor in bound_loadings.columns
+    ]
+
+    if len(ligands_list) == 0:
+        raise ValueError("No ligands from `resource` were found in `gene_loadings`.")
+
+    if len(receptors_list) == 0:
+        raise ValueError("No receptors from `resource` were found in `gene_loadings`.")
+
+    # 3. source-ligand loadings
+    source_lig = (
+        bound_loadings[ligands_list]
+        .stack()
+        .reset_index()
+    )
+    source_lig.columns = ["source", "ligand", "source_loading"]
+
+    # 4. target-receptor loadings
+    target_rec = (
+        bound_loadings[receptors_list]
+        .stack()
+        .reset_index()
+    )
+    target_rec.columns = ["target", "receptor", "target_loading"]
+
+    # 5. join ligand-receptor resource
+    lr_resource = (
+        resource[["ligand", "receptor"]]
+        .dropna()
+        .drop_duplicates()
+    )
+
+    df = (
+        source_lig
+        .merge(lr_resource, on="ligand", how="inner")
+        .merge(target_rec, on="receptor", how="inner")
+    )
+
+    # 6. restrict to allowed source-target pairs
+    allowed = network_df[["target", "predictor", weight_col]].copy()
+    allowed = allowed.dropna(subset=["target", "predictor", weight_col])
+
+    allowed["weight"] = allowed[weight_col].astype(float)
+    allowed = allowed[np.abs(allowed["weight"]) >= float(abs_cutoff)]
+
+    if not keep_negative:
+        allowed = allowed[allowed["weight"] >= 0]
+
+    allowed = (
+        allowed
+        .rename(columns={"predictor": "source"})
+        [["source", "target", "weight"]]
+        .drop_duplicates()
+    )
+
+    df = df.merge(
+        allowed,
+        on=["source", "target"],
+        how="inner",
+    )
+
+    # 7. remove zero loadings before sign comparison
+    df = df[
+        (df["source_loading"] != 0)
+        & (df["target_loading"] != 0)
+    ].copy()
+
+    # 8. keep coherent signs
+    df["source_sign"] = np.sign(df["source_loading"]).astype(int)
+    df["target_sign"] = np.sign(df["target_loading"]).astype(int)
+
+    df = df[df["source_sign"] == df["target_sign"]].copy()
+    df["coherent_sign"] = df["source_sign"]
+
+    if loading_type == "positive":
+        df = df[df["coherent_sign"] > 0].copy()
+    elif loading_type == "negative":
+        df = df[df["coherent_sign"] < 0].copy()
+
+    # 9. interaction labels and scores
+    df["interaction"] = df["ligand"].astype(str) + " - " + df["receptor"].astype(str)
+
+    df["lr_score"] = (
+        df["source_loading"].abs()
+        * df["target_loading"].abs()
+    )
+
+    df = df.sort_values("lr_score", ascending=False).copy()
+
+    # 10. keep top unique interactions
+    if n_top is not None:
+        top_interactions = (
+            df["interaction"]
+            .drop_duplicates()
+            .head(n_top)
+            .tolist()
+        )
+
+        df = df[df["interaction"].isin(top_interactions)].copy()
+
+    # useful final column order
+    column_order = [
+        "source",
+        "target",
+        "ligand",
+        "receptor",
+        "interaction",
+        "source_loading",
+        "target_loading",
+        "source_sign",
+        "target_sign",
+        "coherent_sign",
+        "lr_score",
+    ]
+
+    return df[column_order].reset_index(drop=True)
