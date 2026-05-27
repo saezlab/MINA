@@ -32,9 +32,10 @@ jobs:
       - name: Get test environments
         id: get-envs
         run: |
-          ENVS_JSON=$(uvx hatch env show --json | jq -c 'to_entries
+          ENVS_JSON=$(uvx hatch env show --json | jq -c --arg event "$GITHUB_EVENT_NAME" 'to_entries
             | map(
                 select(.key | startswith("hatch-test"))
+                | select($event == "schedule" or ((.key | contains("pre")) | not))
                 | {
                     name: .key,
                     label: (if (.key | contains("pre")) then .key + " (PRE-RELEASE DEPENDENCIES)" else .key end),
