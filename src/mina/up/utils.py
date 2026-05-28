@@ -313,3 +313,153 @@ def make_membership_matrix(adata, pathways_df, gene_col="genesymbol", pathway_co
     adata.uns["pathway_names"] = list(membership.columns)  # optional: keep names
 
     return membership
+
+def _require_squidpy():
+    try:
+        import squidpy as sq
+    except ImportError as e:
+        raise ImportError(
+            "spatial_enrichment_features() requires Squidpy. "
+            "Install the optional spatial dependencies with:\n\n"
+            "    pip install 'mina[spatial]'\n\n"
+            "or, in a uv-managed development environment:\n\n"
+            "    uv sync --extra spatial"
+        ) from e
+
+    return sq
+
+def get_nhood_enrichment_feats(
+    adata,
+    sample_key: str = "biosample_id",
+    cluster_key: str = "celltype",
+    spatial_key: str = "spatial",
+    coord_type: str = "generic",
+    n_perms: int = 1000,
+    diagonal: bool = True,
+    symmetric: bool = True,
+    fillna: float | None = 0.0,
+):
+    """
+    Build a sample x celltype-pair matrix using Squidpy neighborhood
+    enrichment z-scores. Neighbours are found with delaunay triangulation on 
+    the provided spatial coordinates.
+
+    Parameters
+    ----------
+    adata
+        AnnData object containing spatial coordinates.
+    sample_key
+        Column in ``adata.obs`` defining samples/patients.
+    cluster_key
+        Column in ``adata.obs`` defining cell types or clusters.
+    spatial_key
+        Key in ``adata.obsm`` containing spatial coordinates.
+    coord_type
+        Coordinate type passed to ``squidpy.gr.spatial_neighbors``.
+    n_perms
+        Number of permutations for neighborhood enrichment.
+    diagonal
+        Whether to keep same-celltype features, e.g. ``T__T``.
+    symmetric
+        Whether to keep only one triangle of the celltype-pair matrix.
+    fillna
+        Value used to replace NaN z-scores. Set to ``None`` to keep NaNs.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Sample x celltype-pair feature matrix.
+
+    Or, if ``return_matrices=True``:
+
+    tuple[pandas.DataFrame, dict[str, pandas.DataFrame]]
+        Feature matrix and per-sample enrichment matrices.
+    """
+    sq = _require_squidpy()
+
+    missing_obs = [key for key in [sample_key, cluster_key] if key not in adata.obs]
+    if missing_obs:
+        raise KeyError(
+            f"Missing required columns in adata.obs: {missing_obs}"
+        )
+
+    if spatial_key not in adata.obsm:
+        raise KeyError(
+            f"Missing spatial coordinates in adata.obsm['{spatial_key}']."
+        )
+
+    adata = adata.copy()
+
+    adata.obs[sample_key] = adata.obs[sample_key].astype(str)
+    adata.obs[cluster_key] = adata.obs[cluster_key].astype(str)
+
+    all_celltypes = sorted(adata.obs[cluster_key].dropna().unique())
+
+    rows = []
+    matrices = {}
+
+    for sample, idx in adata.obs.groupby(sample_key, sort=False).indices.items():
+        ad = adata[idx].copy()
+
+        present_celltypes = sorted(ad.obs[cluster_key].dropna().unique())
+
+        if len(present_celltypes) == 0:
+            continue
+
+        ad.obs[cluster_key] = pd.Categorical(
+            ad.obs[cluster_key],
+            categories=present_celltypes,
+        )
+
+        sq.gr.spatial_neighbors(
+            ad,
+            spatial_key=spatial_key,
+            coord_type=coord_type,
+            delaunay=True,
+            key_added="spatial",
+        )
+
+        result = sq.gr.nhood_enrichment(
+            ad,
+            cluster_key=cluster_key,
+            connectivity_key="spatial",
+            n_perms=n_perms,
+            copy=True,
+        )
+
+        z = pd.DataFrame(
+            result.zscore,
+            index=present_celltypes,
+            columns=present_celltypes,
+        )
+
+        z = z.reindex(
+            index=all_celltypes,
+            columns=all_celltypes,
+            fill_value=0,
+        )
+
+        if fillna is not None:
+            z = z.fillna(fillna)
+
+        matrices[str(sample)] = z
+
+        values = {}
+
+        for i, ct1 in enumerate(all_celltypes):
+            for j, ct2 in enumerate(all_celltypes):
+                if not diagonal and ct1 == ct2:
+                    continue
+
+                if symmetric and j < i:
+                    continue
+
+                feature = f"{ct1}__{ct2}"
+                values[feature] = z.loc[ct1, ct2]
+
+        rows.append(pd.Series(values, name=str(sample)))
+
+    features = pd.DataFrame(rows)
+    features.index.name = sample_key
+
+    return features

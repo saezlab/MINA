@@ -20,6 +20,7 @@ from .utils import (
     merge_adata_views,
     convert_views_to_functions,
     make_membership_matrix,
+    get_nhood_enrichment_feats,
 )
 
 __all__ = [
@@ -40,4 +41,5 @@ __all__ = [
     "merge_adata_views",
     "convert_views_to_functions",
     "make_membership_matrix",
+    "get_nhood_enrichment_feats",
 ]
