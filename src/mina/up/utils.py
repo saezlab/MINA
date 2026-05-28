@@ -462,4 +462,8 @@ def get_nhood_enrichment_feats(
     features = pd.DataFrame(rows)
     features.index.name = sample_key
 
-    return features
+    spatial_interaction_adata = ad.AnnData(features)
+    spatial_interaction_adata.obs["biosample_id"] = spatial_interaction_adata.obs_names
+    spatial_interaction_adata.var["interaction"] = spatial_interaction_adata.var_names
+
+    return spatial_interaction_adata
