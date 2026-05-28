@@ -29,6 +29,7 @@ dependencies = [
 
 optional-dependencies.extra = [
   "liana", # required for ligand-receptor networks
+  "squidpy", # required for spatial summaries
 ]
 
 optional-dependencies.dev = [

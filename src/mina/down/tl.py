@@ -69,7 +69,7 @@ def get_associations(adata, test_variable, test_type=None, random_effect=None):
       - For continuous covariates with no random_effect: Pearson correlation.
       - For categorical covariates with no random_effect: one-way ANOVA (F-test).
       - If random_effect is given: likelihood-ratio test on linear mixed models.
-      
+
     Parameters
     ----------
     adata : anndata.AnnData
@@ -412,9 +412,53 @@ def build_info_networks(
     return tidy
 
 
+def _select_views(
+    views_dict,
+    views,
+) -> dict[str, pd.DataFrame]:
+    """
+    Subset a view dictionary.
+
+    Parameters
+    ----------
+    views_dict
+        Dictionary mapping view names to data frames.
+    views
+        Views to keep. If None or "all", keep all views.
+
+    Returns
+    -------
+    dict[str, pandas.DataFrame]
+        Subsetted view dictionary.
+    """
+
+    if views is None or views == "all":
+        return views_dict
+
+    if isinstance(views, str):
+        views = [views]
+
+    views = list(views)
+
+    if len(views) == 0:
+        raise ValueError("`views` must contain at least one view, or be None/'all'.")
+
+    available_views = list(views_dict.keys())
+    missing_views = [view for view in views if view not in views_dict]
+
+    if missing_views:
+        raise ValueError(
+            "Some requested views are not present in the model.\n"
+            f"Missing views: {missing_views}\n"
+            f"Available views: {available_views}"
+        )
+
+    return {view: views_dict[view] for view in views}
+
 def get_multicell_net(
     test_model: ad.AnnData,
     sel_factor: str,
+    views: str | list[str] | None = None,
     random_effect: pd.Series | pd.Index | pd.Categorical | np.ndarray | None = None,
     standardize: bool = False,
     drop_na: bool = True,
@@ -427,7 +471,7 @@ def get_multicell_net(
     2) Enriching these gene sets in the pseudobulk data to get factor-associated scores.
     3) Fitting pairwise linear models among the scores to infer directed networks.
 
-    The linear models can be controled with random effects, standardization, and NA handling options. 
+    The linear models can be controled with random effects, standardization, and NA handling options.
     The final output is a dictionary containing separate inferred networks for positive and negative associations.
 
     Parameters
@@ -436,6 +480,10 @@ def get_multicell_net(
         AnnData object containing factor scores and associated metadata.
     sel_factor : str
         Name of the factor to extract (e.g., "Factor1").
+    views : str, sequence of str, or None
+        Views to include when reconstructing the multicellular network.
+        If None or ``"all"``, all views in the model are used. If a string or
+        list of strings is provided, only those views are used.
     random_effect : ``array-like`` or None
         Optional grouping vector defining random intercepts.
     standardize : bool
@@ -459,6 +507,9 @@ def get_multicell_net(
     factor_names = test_model.var_names.astype(str).tolist()
     loadings_dict = pd.DataFrame(W, columns=model_cols, index=factor_names)
     loadings_dict = split_by_view(loadings_dict)
+
+    # Subset to selected views
+    loadings_dict = _select_views(loadings_dict, views=views)
 
     gset_dict = {}
     # Now, compute the top genes for each factor
@@ -710,7 +761,7 @@ def lr_usage(
 ):
     """
     Recover ligand-receptor interactions constrained by a coordination network and coherent loading signs.
-    This means that the ligand and receptor must both have loadings of the same sign (positive or negative) 
+    This means that the ligand and receptor must both have loadings of the same sign (positive or negative)
     in their respective source and target cell types.
 
     Parameters
