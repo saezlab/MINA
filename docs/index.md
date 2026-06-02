@@ -12,7 +12,7 @@ and downstream interpretation of multicellular programs.
 ## Installation
 
 MINA currently targets Python 3.12 and 3.13.
-MINA currently targets `mofaflex==0.1.0.post1`.
+MINA currently targets the dev branch of MOFA-FLEX: https://github.com/bioFAM/mofaflex.git@main.
 
 Install the latest development version with:
 
@@ -34,10 +34,10 @@ An initial step in this direction is the definition of **multicellular programs*
 
 These programs:
 
-- Encode **coupled responses across cell types**, rather than independent effects  
-- Provide a **low-dimensional representation** of patient variability  
-- Are **robust to differences in cell-type composition and technical noise**  
-- Enable alignment of **bulk and single-cell data** within a shared space  
+- Encode **coupled responses across cell types**, rather than independent effects
+- Provide a **low-dimensional representation** of patient variability
+- Are **robust to differences in cell-type composition and technical noise**
+- Enable alignment of **bulk and single-cell data** within a shared space
 
 This formulation shifts the focus from *which genes change in which cells* to *which coordinated processes define the tissue state of a patient*.
 
@@ -55,10 +55,11 @@ Multicellular programs are one instance of a broader concept: **tissue descripto
 
 Relevant descriptors include:
 
-- **Gene expression per cell type**  
-- **Cell-type composition**  
-- **Cell–cell communication patterns** (e.g. ligand–receptor activity)  
-- **Pathway or regulatory activities**  
+- **Gene expression per cell type**
+- **Cell-type composition**
+- **Cell–cell communication patterns** (e.g. ligand–receptor activity)
+- **Pathway or regulatory activities**
+- **Spatial organization**
 
 Each descriptor captures a different facet of tissue biology. The key objective is not to analyze them in isolation, but to model their **joint variation at the patient level**.
 
@@ -78,25 +79,25 @@ Factor models provide a natural framework for this problem because they are desi
 
 In this context:
 
-- Each tissue descriptor (e.g. expression in a cell type, communication scores) is treated as a **view**  
-- The model learns a set of **latent factors** that explain covariance across these views  
-- These factors represent **tissue-level axes of variation**, i.e. patient-level states  
+- Each tissue descriptor (e.g. expression in a cell type, communication scores) is treated as a **view**
+- The model learns a set of **latent factors** that explain covariance across these views
+- These factors represent **tissue-level axes of variation**, i.e. patient-level states
 
 This enables:
 
-- **Integration of multiple descriptors** within a single model  
-- Separation of **shared biological variation** from descriptor-specific effects  
-- **Dimensionality reduction with interpretability**, via factor loadings  
-- Projection of new samples into the learned latent space 
+- **Integration of multiple descriptors** within a single model
+- Separation of **shared biological variation** from descriptor-specific effects
+- **Dimensionality reduction with interpretability**, via factor loadings
+- Projection of new samples into the learned latent space
 
 ### Conceptual summary
 
 The framework can be summarized as a progression:
 
-1. **Patient representation problem**: define comparable, interpreable summaries of tissue state  
-2. **Multicellular programs**: capture coordinated gene expression across cell types  
-3. **Tissue descriptors**: generalize to multiple complementary views of tissue organization  
-4. **Factor models**: provide the statistical machinery to integrate these views into coherent patient-level representations  
+1. **Patient representation problem**: define comparable, interpreable summaries of tissue state
+2. **Multicellular programs**: capture coordinated gene expression across cell types
+3. **Tissue descriptors**: generalize to multiple complementary views of tissue organization
+4. **Factor models**: provide the statistical machinery to integrate these views into coherent patient-level representations
 
 This positions patient heterogeneity as variation along **latent axes of multicellular organization**, rather than as independent changes in genes or cell types.
 
@@ -104,7 +105,7 @@ This positions patient heterogeneity as variation along **latent axes of multice
 
 MINA is a python package that expands the functionalities provided in our [R implementation](https://github.com/saezlab/MOFAcellulaR) and in [LIANA+](https://liana-py.readthedocs.io/en/latest/notebooks/mofacellular.html).
 
-MINA simplifies the pre-processing of single cell data, connects to new models available in [MOFA-FLEX](https://github.com/bioFAM/mofaflex), and enables new downstream analyses.
+MINA simplifies the pre-processing of single cell data, connects to new models available in [MOFA-FLEX](https://github.com/bioFAM/mofaflex), and enables new downstream analyses and creation of custom tissue descriptor views (e.g. spatial).
 
 Particularly it enables the guidance of factors using information of samples and features as presented in other factor models.
 

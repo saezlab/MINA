@@ -104,12 +104,12 @@ def merge_adata_views(
 
         **Values**
             Each value is an AnnData object resulting from concatenating
-            the corresponding AnnData objects from all studies that contain 
+            the corresponding AnnData objects from all studies that contain
             that view. Guarantees:
 
             - `.obs` columns: only columns present in all contributing studies
               are retained (strict intersection).
-            - `.obs_names` (row identifiers): all original observation names 
+            - `.obs_names` (row identifiers): all original observation names
               are preserved; duplicates across studies are not allowed.
             - `.obs["study"]`: column indicating the study of origin for each
               observation, using the names provided in ``study_names``.
@@ -118,7 +118,7 @@ def merge_adata_views(
                 * ``"outer"`` → all variables present in at least one contributing study
                 * ``"min_n"`` → variables present in at least ``min_var_studies`` studies
             - `.uns` and other metadata are merged conservatively with unique keys.
-            - The resulting AnnData objects are copies; modifying them will 
+            - The resulting AnnData objects are copies; modifying them will
               not affect the original input studies.
     """
 
@@ -251,14 +251,14 @@ def convert_views_to_functions(anndata_dict, net, tmin = 5):
     net : pandas.DataFrame
         Long-format (tidy) DataFrame representing a network, where each row defines
         an interaction between a source and a target.
-        
+
         Required columns:
         - ``source``: identifier of the source node
         - ``target``: identifier of the target node
-        
+
         Optional columns:
         - ``weight``: numeric value representing interaction strength
-        
+
     tmin : int, default=5
         Minimum number of targets required per source. Sources with fewer than
         ``tmin`` associated targets are filtered out.
@@ -341,7 +341,7 @@ def get_nhood_enrichment_feats(
 ):
     """
     Build a sample x celltype-pair matrix using Squidpy neighborhood
-    enrichment z-scores. Neighbours are found with delaunay triangulation on 
+    enrichment z-scores. Neighbours are found with delaunay triangulation on
     the provided spatial coordinates.
 
     Parameters
@@ -463,7 +463,7 @@ def get_nhood_enrichment_feats(
     features.index.name = sample_key
 
     spatial_interaction_adata = AnnData(features)
-    spatial_interaction_adata.obs["biosample_id"] = spatial_interaction_adata.obs_names
+    spatial_interaction_adata.obs[sample_key] = spatial_interaction_adata.obs_names
     spatial_interaction_adata.var["interaction"] = spatial_interaction_adata.var_names
 
     return spatial_interaction_adata

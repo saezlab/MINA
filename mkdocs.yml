@@ -67,11 +67,14 @@ nav:
       - Multicellular Programs Across Experimental Groups: notebooks/GetStarted_groups.ipynb
       - Multicellular Factor Analysis with Functional Views: notebooks/GetStarted_FunctionalViews.ipynb
       - Multicellular Factor Analysis guided by pathway annotations: notebooks/GetStarted_FunctionalViews_guided.ipynb
+      - Multicellular Factor Analysis with spatial data: notebooks/GetStarted_spatial.ipynb
+      - Integration with patpy and evaluating patient maps: notebooks/EvaluationOfModels.ipynb
   - API:
       - Overview: api/index.md
       - Upstream: api/up.md
       - Downstream: api/down.md
       - Plotting: api/pl.md
+      - Integration: api/integration.md
   - Contributing: contributing.md
   - Changelog: changelog.md
   - References: references.md

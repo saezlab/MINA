@@ -20,8 +20,12 @@
 
 ::: mina.down.project_wide_to_factors
 
+::: mina.down.lr_usage
+
 ## Utils
 
 ::: mina.down.model_to_anndata
 
 ::: mina.down.split_by_view
+
+::: mina.down.restore_anns_factor

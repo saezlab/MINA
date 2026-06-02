@@ -35,3 +35,9 @@
 ::: mina.up.append_view_to_var
 
 ::: mina.up.merge_adata_views
+
+::: mina.up.convert_views_to_functions
+
+::: mina.up.make_membership_matrix
+
+::: mina.up.get_nhood_enrichment_feats

@@ -11,3 +11,7 @@
 ::: mina.pl.plot_mcell_funcomics
 
 ::: mina.pl.plot_mcell_network
+
+::: mina.pl.plot_features_per_view
+
+::: mina.pl.plot_comm_overview
