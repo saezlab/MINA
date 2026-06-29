@@ -8,6 +8,10 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.patches import Rectangle
 
+from scipy.cluster.hierarchy import linkage, leaves_list
+from scipy.spatial.distance import pdist
+from matplotlib.colors import TwoSlopeNorm
+
 # Plotting
 
 
@@ -676,6 +680,223 @@ def plot_mcell_network(
         plt.savefig(save_path, bbox_inches="tight", dpi=220)
     plt.show()
     return G
+
+# Simpler network representations
+
+def plot_interaction_tileplot(
+    df: pd.DataFrame,
+    value_col: str = "cor_estimate",
+    row_col: str = "target",
+    col_col: str = "predictor",
+    cluster_by: str | None = "rows",  # "rows", "columns", or None
+    same_order_for_rows_cols: bool = True,
+    fill_missing_for_clustering: float = 0.0,
+    cmap: str = "RdBu_r",
+    center: float = 0.0,
+    vlim: float | None = None,
+    show_values: bool = True,
+    value_decimals: int = 2,
+    figsize: tuple[float, float] | None = None,
+    cbar_label: str | None = None,
+    linewidth: float = 0.5,
+    linecolor: str = "lightgrey",
+    text_kwargs: dict | None = None,
+):
+    """
+    Plot a target × predictor interaction matrix as a diverging clustered tile plot.
+
+    By default:
+    - tile fill uses `cor_estimate`
+    - colors are centered at 0
+    - 0 is white
+    - rows are clustered
+    - the inferred row order is also applied to columns
+
+    Parameters
+    ----------
+    df
+        Long-format dataframe with one row per target-predictor interaction.
+    value_col
+        Column used for tile color.
+    row_col
+        Column defining rows.
+    col_col
+        Column defining columns.
+    cluster_by
+        One of {"rows", "columns", None}.
+        If "rows", cluster row profiles and apply that order.
+        If "columns", cluster column profiles and apply that order.
+        If None, keep original order.
+    same_order_for_rows_cols
+        If True, apply the chosen clustering order to both rows and columns.
+        This is appropriate when rows and columns represent the same entities,
+        e.g. cell types.
+    fill_missing_for_clustering
+        Value used only for clustering missing interactions.
+        Missing plotted tiles remain NaN and are shown as white.
+    cmap
+        Diverging colormap.
+    center
+        Center of the color scale.
+    vlim
+        Symmetric color limit. If None, inferred from max absolute value.
+    show_values
+        Whether to write values in tiles.
+    value_decimals
+        Number of decimals shown inside tiles.
+    """
+
+    required = {row_col, col_col, value_col}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    if cluster_by not in {"rows", "columns", None}:
+        raise ValueError("cluster_by must be one of {'rows', 'columns', None}")
+
+    # No aggregation: repeated target-predictor pairs are an error.
+    duplicated = df.duplicated(subset=[row_col, col_col], keep=False)
+    if duplicated.any():
+        dup_pairs = (
+            df.loc[duplicated, [row_col, col_col]]
+            .drop_duplicates()
+            .head(10)
+            .to_dict("records")
+        )
+        raise ValueError(
+            "Repeated target-predictor pairs found. "
+            f"Examples: {dup_pairs}"
+        )
+
+    # Preserve first-seen order before any clustering
+    row_order_original = pd.Index(df[row_col].drop_duplicates())
+    col_order_original = pd.Index(df[col_col].drop_duplicates())
+
+    mat = (
+        df.set_index([row_col, col_col])[value_col]
+        .unstack(col_col)
+        .reindex(index=row_order_original, columns=col_order_original)
+    )
+
+    # Make missing values visually white
+    cmap_obj = plt.get_cmap(cmap).copy()
+    cmap_obj.set_bad("white")
+
+    # Symmetric color scale around center
+    if vlim is None:
+        vlim = np.nanmax(np.abs(mat.to_numpy()))
+        if not np.isfinite(vlim) or vlim == 0:
+            vlim = 1.0
+
+    norm = TwoSlopeNorm(vmin=-vlim, vcenter=center, vmax=vlim)
+
+    # Clustering
+    if cluster_by is not None:
+        cluster_mat = mat.fillna(fill_missing_for_clustering)
+
+        if cluster_by == "rows":
+            if cluster_mat.shape[0] > 1:
+                distances = pdist(cluster_mat.to_numpy(), metric="euclidean")
+                linkage_matrix = linkage(distances, method="average")
+                ordered_labels = mat.index[leaves_list(linkage_matrix)]
+            else:
+                ordered_labels = mat.index
+
+        elif cluster_by == "columns":
+            if cluster_mat.shape[1] > 1:
+                distances = pdist(cluster_mat.T.to_numpy(), metric="euclidean")
+                linkage_matrix = linkage(distances, method="average")
+                ordered_labels = mat.columns[leaves_list(linkage_matrix)]
+            else:
+                ordered_labels = mat.columns
+
+        if same_order_for_rows_cols:
+            # Apply the selected order to both axes.
+            # Labels absent from the clustered axis are appended in original order.
+            all_labels = pd.Index(
+                list(row_order_original) +
+                [x for x in col_order_original if x not in row_order_original]
+            )
+
+            ordered_labels = pd.Index(
+                list(ordered_labels) +
+                [x for x in all_labels if x not in ordered_labels]
+            )
+
+            mat = mat.reindex(index=ordered_labels, columns=ordered_labels)
+        else:
+            if cluster_by == "rows":
+                mat = mat.reindex(index=ordered_labels)
+            elif cluster_by == "columns":
+                mat = mat.reindex(columns=ordered_labels)
+
+    if figsize is None:
+        figsize = (
+            max(5, 0.55 * mat.shape[1]),
+            max(4, 0.45 * mat.shape[0]),
+        )
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    im = ax.imshow(
+        mat.to_numpy(),
+        cmap=cmap_obj,
+        norm=norm,
+        aspect="auto",
+    )
+
+    ax.set_xticks(np.arange(mat.shape[1]))
+    ax.set_yticks(np.arange(mat.shape[0]))
+    ax.set_xticklabels(mat.columns, rotation=45, ha="right")
+    ax.set_yticklabels(mat.index)
+
+    ax.set_xlabel(col_col)
+    ax.set_ylabel(row_col)
+
+    # Tile grid
+    ax.set_xticks(np.arange(-0.5, mat.shape[1], 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, mat.shape[0], 1), minor=True)
+    ax.grid(which="minor", color=linecolor, linewidth=linewidth)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    # Adaptive text color based on tile luminance
+    if show_values:
+        default_text_kwargs = dict(
+            ha="center",
+            va="center",
+            fontsize=9,
+        )
+        if text_kwargs is not None:
+            default_text_kwargs.update(text_kwargs)
+
+        for i in range(mat.shape[0]):
+            for j in range(mat.shape[1]):
+                value = mat.iat[i, j]
+
+                if pd.isna(value):
+                    continue
+
+                rgba = cmap_obj(norm(value))
+                r, g, b = rgba[:3]
+
+                # Perceived luminance
+                luminance = 0.299 * r + 0.587 * g + 0.114 * b
+                text_color = "black" if luminance > 0.5 else "white"
+
+                ax.text(
+                    j,
+                    i,
+                    f"{value:.{value_decimals}f}",
+                    color=text_color,
+                    **default_text_kwargs,
+                )
+
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label(cbar_label or value_col)
+
+    fig.tight_layout()
+
+    return None
 
 
 def plot_features_per_view(
