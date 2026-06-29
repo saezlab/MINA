@@ -18,13 +18,11 @@ body {
 
 .md-header,
 .md-tabs {
-    background: linear-gradient(90deg, #1f2b58 0%, #1d4ea8 58%, #0f8b8d 100%);
+    background: var(--mina-navy);
 }
 
 .md-main {
-    background:
-        radial-gradient(circle at top right, rgba(15, 139, 141, 0.08), transparent 28%),
-        linear-gradient(180deg, #ffffff 0%, var(--mina-bg-soft) 100%);
+    background: var(--mina-bg-soft);
 }
 
 .md-typeset h1,

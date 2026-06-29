@@ -1,9 +1,10 @@
+"""Compatibility helpers for optional patpy integrations."""
+
 from __future__ import annotations
 
+import anndata as ad
 import numpy as np
 import pandas as pd
-import anndata as ad
-
 from scipy.spatial.distance import pdist, squareform
 
 try:
@@ -20,22 +21,21 @@ except ImportError as e:
 
 class PrecomputedSampleRepresentation(SampleRepresentationMethod):
     """
-    Wrap a precomputed sample x feature matrix so it can be used with patpy
-    downstream tools.
+    Wrap a precomputed sample-by-feature matrix for patpy tools.
 
     This is useful when sample-level representations were computed outside
     patpy, for example using MINA, MOFA, PCA, or another latent-variable model.
 
     Parameters
     ----------
-    representation
+    representation : pandas.DataFrame
         DataFrame with samples in rows and latent variables/features in columns.
-    metadata
+    metadata : pandas.DataFrame or None
         Optional sample-level metadata. Its index must contain the same sample
         IDs as ``representation.index``.
-    metric
+    metric : str
         Distance metric passed to ``scipy.spatial.distance.pdist``.
-    seed
+    seed : int
         Random seed used by patpy embedding methods.
     """
 
@@ -84,8 +84,7 @@ class PrecomputedSampleRepresentation(SampleRepresentationMethod):
             missing = representation.index.difference(metadata.index)
             if len(missing) > 0:
                 raise ValueError(
-                    "`metadata` is missing samples from `representation.index`; "
-                    f"for example: {missing[:5].tolist()}"
+                    f"`metadata` is missing samples from `representation.index`; for example: {missing[:5].tolist()}"
                 )
 
             self.metadata = metadata.loc[representation.index].copy()
@@ -105,7 +104,17 @@ class PrecomputedSampleRepresentation(SampleRepresentationMethod):
 
     def prepare_anndata(self, adata=None):
         """
-        No-op because the representation is already sample-level.
+        Skip AnnData preparation.
+
+        Parameters
+        ----------
+        adata : anndata.AnnData or None
+            Ignored placeholder for compatibility with the patpy interface.
+
+        Returns
+        -------
+        None
+            The representation is already sample-level and no preparation is needed.
         """
         return None
 
@@ -115,10 +124,21 @@ class PrecomputedSampleRepresentation(SampleRepresentationMethod):
         dist: str | None = None,
     ) -> np.ndarray:
         """
-        Calculate a sample x sample distance matrix from the precomputed
-        representation.
-        """
+        Calculate a sample-by-sample distance matrix.
 
+        Parameters
+        ----------
+        force : bool
+            If True, recompute distances even when cached distances exist.
+        dist : str or None
+            Distance metric passed to ``scipy.spatial.distance.pdist``. If None,
+            ``self.metric`` is used.
+
+        Returns
+        -------
+        distances : numpy.ndarray
+            Square sample-by-sample distance matrix.
+        """
         if self._distances is not None and not force:
             return self._distances
 
@@ -143,13 +163,27 @@ class PrecomputedSampleRepresentation(SampleRepresentationMethod):
     ) -> ad.AnnData:
         """
         Convert the precomputed sample representation to an AnnData object.
-        """
 
+        Parameters
+        ----------
+        metadata : pandas.DataFrame or None
+            Optional metadata to pass to the patpy conversion. If None, the
+            metadata stored on the representation is used.
+        *args : tuple
+            Additional positional arguments passed to the parent method.
+        **kwargs : dict
+            Additional keyword arguments passed to the parent method.
+
+        Returns
+        -------
+        adata : anndata.AnnData
+            AnnData representation produced by the parent patpy method.
+        """
         metadata = self.metadata if metadata is None else metadata.copy()
         metadata.index = metadata.index.astype(str)
 
         return super().to_adata(
-            metadata=metadata,
             *args,
+            metadata=metadata,
             **kwargs,
         )

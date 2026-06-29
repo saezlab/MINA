@@ -14,9 +14,8 @@ and this project adheres to [Semantic Versioning][].
 
 ### Added
 
-- Preprocessing utilities for filtering views, samples, genes, highly variable genes, and cell-type-specific AnnData objects.
-- Multi-view construction helpers for raw count storage, view annotation, merging, functional view conversion, membership matrices, and spatial neighborhood enrichment features.
-- Downstream analysis functions for factor associations, explained variance summaries, p-value matrices, gene set loading summaries, information networks, multicellular networks, and factor projection.
-- Plotting utilities for view-level coverage, p-value tiles, multicellular functional communication summaries, multicellular networks, feature counts per view, and communication overview plots.
-- Tutorial notebooks for MOFA, SOFA-guided factors, experimental groups, functional views, pathway-guided functional views, spatial data, and patpy patient-map evaluation.
+- Adapted upstream and downstream processing functions to newest MOFA-FLEX API - affects mainly the transformation of the model to an `anndata`
+- Downstream analyses of cell-cell communication, including plotting functions
+- Upstream functions to process spatial data
 - Patpy integration through a precomputed sample representation adapter.
+- Tutorial notebooks for MOFA, SOFA-guided factors, experimental groups, functional views, pathway-guided functional views, spatial data, and patpy patient-map evaluation.

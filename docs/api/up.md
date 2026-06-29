@@ -41,3 +41,5 @@
 ::: mina.up.make_membership_matrix
 
 ::: mina.up.get_nhood_enrichment_feats
+
+::: mina.up.get_cell_props

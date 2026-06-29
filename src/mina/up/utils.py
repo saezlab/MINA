@@ -1,8 +1,11 @@
-# Dependencies
-from anndata import AnnData
+"""Utility functions for constructing and merging MINA upstream views."""
+
 import anndata as ad
 import decoupler as dc
 import pandas as pd
+from anndata import AnnData
+from skbio.stats.composition import clr, multi_replace
+
 
 # This function saves the raw counts in a layer called 'raw_counts' for each AnnData object in a dictionary
 def save_raw_counts(anndata_dict, layer_name="raw_counts"):
@@ -21,7 +24,6 @@ def save_raw_counts(anndata_dict, layer_name="raw_counts"):
     None
         The input dictionary is modified in place.
     """
-
     for _view_name, adata in anndata_dict.items():
         # Save the current count matrix (adata.X) to a new layer
         adata.layers[layer_name] = adata.X.copy()
@@ -56,14 +58,13 @@ def append_view_to_var(anndata_dict, join=":"):
         adata.var_names = new_var
 
 
-
 def merge_adata_views(
     studies: list[dict[str, AnnData]],
     study_names: list[str],
     view_mode: str = "union",
     min_view_studies: int = 2,
     var_mode: str = "outer",
-    min_var_studies: int = 2
+    min_var_studies: int = 2,
 ) -> dict[str, AnnData]:
     """
     Merge multiple study-level AnnData dictionaries into unified views.
@@ -121,7 +122,6 @@ def merge_adata_views(
             - The resulting AnnData objects are copies; modifying them will
               not affect the original input studies.
     """
-
     if len(studies) != len(study_names):
         raise ValueError("study_names must have the same length as studies")
 
@@ -132,7 +132,6 @@ def merge_adata_views(
         raise ValueError("min_var_studies must be >= 2")
 
     n_studies = len(studies)
-
 
     view_counts = {}
     for study in studies:
@@ -148,10 +147,9 @@ def merge_adata_views(
     else:
         raise ValueError(f"Unknown view_mode: {view_mode}")
 
-
     view_to_adatas = {view: [] for view in keep_views}
 
-    for study_name, study in zip(study_names, studies):
+    for study_name, study in zip(study_names, studies, strict=True):
         for view in keep_views:
             if view in study:
                 a = study[view].copy()
@@ -161,19 +159,12 @@ def merge_adata_views(
     merged = {}
 
     for view, adatas in view_to_adatas.items():
-
         if len(adatas) == 1:
             merged_adata = adatas[0].copy()
         else:
-            merged_adata = ad.concat(
-                adatas,
-                axis=0,
-                join="outer",
-                merge="unique"
-            )
+            merged_adata = ad.concat(adatas, axis=0, join="outer", merge="unique")
 
         if len(adatas) > 1:
-
             var_counts = {}
             for a in adatas:
                 for v in a.var_names:
@@ -207,16 +198,12 @@ def merge_adata_views(
                 df = df.loc[df.index.intersection(ordered_vars)]
                 var_frames.append(df)
 
-            combined_var = (
-                pd.concat(var_frames)
-                .loc[~pd.concat(var_frames).index.duplicated(keep="first")]
-            )
+            combined_var = pd.concat(var_frames).loc[~pd.concat(var_frames).index.duplicated(keep="first")]
 
             # Reindex to ensure full ordered_vars coverage
             combined_var = combined_var.reindex(ordered_vars)
 
             merged_adata.var = combined_var
-
 
         obs_cols = None
         for a in adatas:
@@ -237,9 +224,9 @@ def merge_adata_views(
     return merged
 
 
-def convert_views_to_functions(anndata_dict, net, tmin = 5):
+def convert_views_to_functions(anndata_dict, net, tmin=5):
     """
-    Applies decoupler's run ulm function to each AnnData object in the input dictionary using the provided network.
+    Apply decoupler ULM to each AnnData object with the provided network.
 
     Rewrites the input dictionary in place, replacing each AnnData object with the result of the decoupler analysis.
 
@@ -268,13 +255,13 @@ def convert_views_to_functions(anndata_dict, net, tmin = 5):
     None
         The function modifies the input dictionary in place.
     """
-
     for cell_type, adata in anndata_dict.items():
         dc.mt.ulm(data=adata, net=net, tmin=tmin)
         score = dc.pp.get_obsm(adata=adata, key="score_ulm")
 
         # Update the dictionary with the filtered AnnData object
         anndata_dict[cell_type] = score.copy()
+
 
 def make_membership_matrix(adata, pathways_df, gene_col="genesymbol", pathway_col="pathway"):
     """
@@ -314,22 +301,22 @@ def make_membership_matrix(adata, pathways_df, gene_col="genesymbol", pathway_co
 
     return membership
 
+
 def _require_squidpy():
     try:
         import squidpy as sq
     except ImportError as e:
         raise ImportError(
-            "spatial_enrichment_features() requires Squidpy. "
-            "Install the optional spatial dependencies with:\n\n"
-            "    pip install 'mina[spatial]'\n\n"
-            "or, in a uv-managed development environment:\n\n"
-            "    uv sync --extra spatial"
+            "get_nhood_enrichment_feats() requires Squidpy. "
+            "Install MINA with its runtime dependencies before using spatial summaries."
         ) from e
 
     return sq
 
+
 def get_nhood_enrichment_feats(
     adata,
+    metadata,
     sample_key: str = "biosample_id",
     cluster_key: str = "celltype",
     spatial_key: str = "spatial",
@@ -340,53 +327,45 @@ def get_nhood_enrichment_feats(
     fillna: float | None = 0.0,
 ):
     """
-    Build a sample x celltype-pair matrix using Squidpy neighborhood
-    enrichment z-scores. Neighbours are found with delaunay triangulation on
-    the provided spatial coordinates.
+    Build sample-level neighborhood enrichment features.
 
     Parameters
     ----------
-    adata
-        AnnData object containing spatial coordinates.
-    sample_key
+    adata : anndata.AnnData
+        AnnData object containing spatial coordinates and observation metadata.
+    metadata : pandas.DataFrame
+        Sample-level metadata indexed by ``sample_key``.
+    sample_key : str
         Column in ``adata.obs`` defining samples/patients.
-    cluster_key
+    cluster_key : str
         Column in ``adata.obs`` defining cell types or clusters.
-    spatial_key
+    spatial_key : str
         Key in ``adata.obsm`` containing spatial coordinates.
-    coord_type
+    coord_type : str
         Coordinate type passed to ``squidpy.gr.spatial_neighbors``.
-    n_perms
+    n_perms : int
         Number of permutations for neighborhood enrichment.
-    diagonal
+    diagonal : bool
         Whether to keep same-celltype features, e.g. ``T__T``.
-    symmetric
+    symmetric : bool
         Whether to keep only one triangle of the celltype-pair matrix.
-    fillna
+    fillna : float or None
         Value used to replace NaN z-scores. Set to ``None`` to keep NaNs.
 
     Returns
     -------
-    pandas.DataFrame
-        Sample x celltype-pair feature matrix.
-
-    Or, if ``return_matrices=True``:
-
-    tuple[pandas.DataFrame, dict[str, pandas.DataFrame]]
-        Feature matrix and per-sample enrichment matrices.
+    spatial_interaction_adata : anndata.AnnData
+        AnnData object with samples as observations and celltype-pair
+        neighborhood enrichment z-scores as variables.
     """
     sq = _require_squidpy()
 
     missing_obs = [key for key in [sample_key, cluster_key] if key not in adata.obs]
     if missing_obs:
-        raise KeyError(
-            f"Missing required columns in adata.obs: {missing_obs}"
-        )
+        raise KeyError(f"Missing required columns in adata.obs: {missing_obs}")
 
     if spatial_key not in adata.obsm:
-        raise KeyError(
-            f"Missing spatial coordinates in adata.obsm['{spatial_key}']."
-        )
+        raise KeyError(f"Missing spatial coordinates in adata.obsm['{spatial_key}'].")
 
     adata = adata.copy()
 
@@ -463,7 +442,51 @@ def get_nhood_enrichment_feats(
     features.index.name = sample_key
 
     spatial_interaction_adata = AnnData(features)
-    spatial_interaction_adata.obs[sample_key] = spatial_interaction_adata.obs_names
+    spatial_interaction_adata.obs = spatial_interaction_adata.obs.join(metadata, how="left")
+    spatial_interaction_adata.obs.index.name = None
     spatial_interaction_adata.var["interaction"] = spatial_interaction_adata.var_names
 
     return spatial_interaction_adata
+
+
+def get_cell_props(
+    adata: AnnData,
+    sample_key: str,
+    cell_type_key: str,
+    metadata: pd.DataFrame,
+) -> AnnData:
+    """
+    Build sample-level center-log-ratio cell type composition features.
+
+    Parameters
+    ----------
+    adata : anndata.AnnData
+        AnnData object with ``adata.obs`` containing sample and cell type or grouping information.
+    sample_key : str
+        Column in ``adata.obs`` defining samples/patients.
+    cell_type_key : str
+        Column in ``adata.obs`` defining cell types or clusters.
+    metadata : pandas.DataFrame
+        DataFrame containing metadata for the samples, indexed by ``sample_key``.
+
+    Returns
+    -------
+    clr_props_adata : anndata.AnnData
+        AnnData object with samples as observations and center-log-ratio
+        transformed cell type proportions as variables.
+    """
+    # Compute cell type counts per sample
+    cell_counts = adata.obs.groupby([sample_key, cell_type_key]).size().unstack(fill_value=0)
+
+    # Convert counts to proportions
+    prop_data = cell_counts.div(cell_counts.sum(axis=1), axis=0)
+
+    # CLR transformation
+    prop_data_clr = clr(multi_replace(prop_data.values))
+    prop_data_clr = pd.DataFrame(prop_data_clr, index=prop_data.index, columns=prop_data.columns)
+
+    clr_props_adata = AnnData(prop_data_clr)
+    clr_props_adata.var["compositions"] = clr_props_adata.var_names
+    clr_props_adata.obs = clr_props_adata.obs.join(metadata, how="left")
+    clr_props_adata.obs.index.name = None
+    return clr_props_adata

@@ -1,11 +1,12 @@
-# Dependencies
+"""Plotting functions for MINA upstream and downstream summaries."""
+
 import matplotlib.gridspec as gridspec
-from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib.patches import Rectangle
 
 # Plotting
 
@@ -42,7 +43,6 @@ def plot_view_samples(
     fig : matplotlib.figure.Figure or None
         The created Figure object if ``return_fig`` is True, otherwise None.
     """
-
     log_view_counts = []
     view_counts = []
     view_samples = []
@@ -81,9 +81,7 @@ def plot_view_samples(
         return data
 
 
-def plot_view_genes(
-    anndata_dict, min_genes, table=False, figsize=(5, 5), dpi=100, ax=None, return_fig=False, **kwargs
-):
+def plot_view_genes(anndata_dict, min_genes, table=False, figsize=(5, 5), dpi=100, ax=None, return_fig=False, **kwargs):
     """
     Quality control plot to assess the quality of the obtained pseudobulk samples.
 
@@ -113,7 +111,6 @@ def plot_view_genes(
     fig : matplotlib.figure.Figure or None
         The created Figure object if ``return_fig`` is True, otherwise None.
     """
-
     # Extract obs
     log_view_counts = []
     view_counts = []
@@ -157,10 +154,10 @@ def plot_sample_coverage(
     anndata_dict, threshold, proportion, table=False, figsize=(5, 5), dpi=100, return_fig=False, **kwargs
 ):
     """
-    Visualize coverage for each AnnData in a dictionary and highlight samples
-    below a given proportion threshold.
+    Visualize sample coverage for each AnnData view.
 
-    One figure is produced per dictionary key.
+    Samples below the requested proportion threshold are highlighted. One
+    figure is produced per dictionary key.
 
     Parameters
     ----------
@@ -190,7 +187,6 @@ def plot_sample_coverage(
         Summary tables if ``table`` is True, figures if ``return_fig`` is True,
         otherwise None.
     """
-
     # Validate dict-style thresholds if provided
     if isinstance(threshold, dict):
         missing = set(anndata_dict.keys()) - set(threshold.keys())
@@ -295,10 +291,10 @@ def plot_sample_coverage(
 
 # Associations
 
+
 def plot_pval_tiles(p_df: pd.DataFrame, star_threshold: float = 0.05, ax=None, title: str | None = None):
     """
-    Create a tile plot colored by ``-log10(p)`` values, with tiles annotated
-    by a star when ``p <= star_threshold``.
+    Create a tile plot of ``-log10(p)`` values.
 
     Parameters
     ----------
@@ -310,8 +306,12 @@ def plot_pval_tiles(p_df: pd.DataFrame, star_threshold: float = 0.05, ax=None, t
         Axes to draw on. If None, a new figure and axes are created.
     title : str or None
         Optional title for the plot.
-    """
 
+    Returns
+    -------
+    axes : matplotlib.axes.Axes or tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+        Existing axes when ``ax`` is provided, otherwise the created figure and axes.
+    """
     # Copy to avoid modifying the input
     p = p_df.copy()
 
@@ -363,6 +363,7 @@ def plot_pval_tiles(p_df: pd.DataFrame, star_threshold: float = 0.05, ax=None, t
         return fig, ax
     return ax
 
+
 # Functional enrichment
 
 
@@ -403,8 +404,12 @@ def plot_mcell_funcomics(
         Rotation angle for y-axis tick labels.
     use_var : bool
         If True, rank features by variance instead of mean absolute value.
-    """
 
+    Returns
+    -------
+    None
+        The function displays the plot and does not return an object.
+    """
     views = []
     filtered_data = {}
 
@@ -498,7 +503,8 @@ def plot_mcell_network(
     arrows_on_top: bool = True,
 ):
     """
-    Given the inference of a multicellular information network, plot the resulting directed graph with edges colored and scaled by weight.
+    Plot an inferred multicellular information network.
+
     The results are shown solely from one subset (positive or negative loadings).
 
     Parameters
@@ -541,8 +547,8 @@ def plot_mcell_network(
 
     Returns
     -------
-    matplotlib.figure.Figure or None
-        The generated figure, or None if not returned explicitly.
+    graph : networkx.DiGraph
+        Directed graph built from the filtered network table.
     """
     required_cols = {"target", "predictor", weight_col}
     missing = required_cols - set(df.columns)
@@ -608,6 +614,21 @@ def plot_mcell_network(
     edge_z = 4 if arrows_on_top else 1
 
     def draw_batch(batch, rad):
+        """
+        Draw a batch of network edges with a shared curvature.
+
+        Parameters
+        ----------
+        batch : list[tuple]
+            Edge tuples with width, color, and curvature metadata.
+        rad : float
+            Curvature radius passed to NetworkX edge drawing.
+
+        Returns
+        -------
+        None
+            Edges are drawn directly on the active axes.
+        """
         if not batch:
             return
         edgelist = [(u, v) for (u, v, _), _, _, _ in batch]
@@ -665,6 +686,7 @@ def plot_features_per_view(
     ytick_rotation: int = 0,
     xtick_rotation: int = 90,
     share_color_scale: bool = True,
+    center: float | None = 0.0,
 ):
     """
     Plot grouped heatmaps for selected features across multiple views.
@@ -676,12 +698,11 @@ def plot_features_per_view(
     Parameters
     ----------
     df_dict : dict[str, pandas.DataFrame]
-        Dictionary mapping view names to dataframes of shape
-        ``n_samples × n_features``.
+        Dictionary mapping view names to sample-by-feature matrices.
     features : list[str]
-        Features of interest to plot across views.
+        Feature names to plot in each view when present.
     cmap : str
-        Colormap for the heatmaps.
+        Matplotlib colormap name.
     figsize : tuple[int, int]
         Overall figure size.
     ytick_rotation : int
@@ -689,12 +710,14 @@ def plot_features_per_view(
     xtick_rotation : int
         Rotation angle for x-axis tick labels.
     share_color_scale : bool
-        If True, use a common color scale across all views.
+        Whether all heatmaps use a shared color scale.
+    center : float or None
+        Center value for diverging color scaling. If None, no center is used.
 
     Returns
     -------
     None
-        Displays the plot.
+        The function displays the plot and does not return an object.
     """
     filtered_data = {}
     views = []
@@ -715,7 +738,14 @@ def plot_features_per_view(
     # Global color scale if requested
     if share_color_scale:
         all_vals = pd.concat(filtered_data.values(), axis=1)
-        vmin, vmax = all_vals.min().min(), all_vals.max().max()
+        values = all_vals.to_numpy().ravel()
+        values = values[np.isfinite(values)]
+
+        if center is None:
+            vmin, vmax = np.nanmin(values), np.nanmax(values)
+        else:
+            max_abs = np.nanmax(np.abs(values - center))
+            vmin, vmax = center - max_abs, center + max_abs
     else:
         vmin, vmax = None, None
 
@@ -725,12 +755,26 @@ def plot_features_per_view(
     for i, view in enumerate(views):
         plot_data = filtered_data[view]
 
+        # Per-view centered color scale if not sharing scale
+        if not share_color_scale:
+            values = plot_data.to_numpy().ravel()
+            values = values[np.isfinite(values)]
+
+            if center is None:
+                view_vmin, view_vmax = np.nanmin(values), np.nanmax(values)
+            else:
+                max_abs = np.nanmax(np.abs(values - center))
+                view_vmin, view_vmax = center - max_abs, center + max_abs
+        else:
+            view_vmin, view_vmax = vmin, vmax
+
         ax = fig.add_subplot(gs[i])
         sns.heatmap(
             plot_data,
             cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
+            vmin=view_vmin,
+            vmax=view_vmax,
+            center=center,
             cbar=False,
             ax=ax,
             xticklabels=True,
@@ -758,6 +802,7 @@ def plot_features_per_view(
 
     plt.show()
 
+
 def plot_comm_overview(
     plot_df,
     tile_width=0.6,
@@ -773,35 +818,30 @@ def plot_comm_overview(
 
     Parameters
     ----------
-    plot_df : pd.DataFrame
+    plot_df : pandas.DataFrame
         Output from `generate_lr_plot_df`.
-
     tile_width : float
         Width of each rectangular tile.
-
     tile_height : float
         Height of each rectangular tile.
-
     text_size : float
         Font size of + / - labels inside tiles.
-
     figsize : tuple or None
         Matplotlib figure size. If None, size is inferred from data dimensions.
-
     source_label : str
         Label for source side of x-axis.
-
     target_label : str
         Label for target side of x-axis.
-
     ax : matplotlib.axes.Axes or None
         Existing axis to plot into.
 
     Returns
     -------
-    fig, ax
+    fig : matplotlib.figure.Figure
+        Figure containing the communication overview.
+    ax : matplotlib.axes.Axes
+        Axes containing the communication overview.
     """
-
     required_cols = {
         "source",
         "target",
@@ -817,29 +857,16 @@ def plot_comm_overview(
     if plot_df.empty:
         raise ValueError("`plot_df` is empty. Nothing to plot.")
 
-    interaction_order = (
-        plot_df["interaction"]
-        .drop_duplicates()
-        .tolist()
-    )
+    interaction_order = plot_df["interaction"].drop_duplicates().tolist()
 
     source_order = plot_df["source"].drop_duplicates().tolist()
     target_order = plot_df["target"].drop_duplicates().tolist()
 
-    source_x = {
-        source: i
-        for i, source in enumerate(source_order)
-    }
+    source_x = {source: i for i, source in enumerate(source_order)}
 
-    target_x = {
-        target: i + len(source_order) + 1
-        for i, target in enumerate(target_order)
-    }
+    target_x = {target: i + len(source_order) + 1 for i, target in enumerate(target_order)}
 
-    y_pos = {
-        interaction: i
-        for i, interaction in enumerate(interaction_order[::-1])
-    }
+    y_pos = {interaction: i for i, interaction in enumerate(interaction_order[::-1])}
 
     if figsize is None:
         width = max(6, 0.35 * (len(source_order) + len(target_order) + 1))
@@ -852,12 +879,11 @@ def plot_comm_overview(
         fig = ax.figure
 
     sign_colors = {
-        1: "#3b82f6",    # positive
+        1: "#3b82f6",  # positive
         -1: "#7e22ce",  # negative
     }
 
     for _, row in plot_df.iterrows():
-
         y = y_pos[row["interaction"]]
         sign = int(row["coherent_sign"])
 
@@ -873,7 +899,6 @@ def plot_comm_overview(
         ]
 
         for x in x_values:
-
             ax.add_patch(
                 Rectangle(
                     (x - tile_width / 2, y - tile_height / 2),
@@ -898,11 +923,7 @@ def plot_comm_overview(
     # x-axis labels
     x_labels = source_order + [""] + target_order
 
-    x_positions = (
-        list(range(len(source_order)))
-        + [len(source_order)]
-        + list(target_x.values())
-    )
+    x_positions = list(range(len(source_order))) + [len(source_order)] + list(target_x.values())
 
     ax.set_xticks(x_positions)
     ax.set_xticklabels(x_labels, rotation=45, ha="right")

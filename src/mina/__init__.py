@@ -1,3 +1,5 @@
+"""Top-level namespace for the MINA package."""
+
 from __future__ import annotations
 
 from importlib.metadata import PackageNotFoundError, version

@@ -1,22 +1,25 @@
+"""Downstream analysis tools for MINA model outputs."""
+
 from .tl import (
-    run_ulm_per_view,
-    get_associations,
-    calc_total_variance,
-    get_pval_matrix,
-    get_loading_gset,
     build_info_networks,
+    calc_total_variance,
+    get_associations,
+    get_loading_gset,
     get_multicell_net,
+    get_pval_matrix,
+    lr_usage,
     multiview_to_wide,
     project_wide_to_factors,
-    lr_usage,
+    run_ulm_per_view,
 )
 from .utils import (
     model_to_anndata,
-    split_by_view,
     restore_anns_factor,
+    split_by_view,
 )
 
-__all__ = ["run_ulm_per_view",
+__all__ = [
+    "run_ulm_per_view",
     "get_associations",
     "calc_total_variance",
     "get_pval_matrix",
@@ -28,5 +31,5 @@ __all__ = ["run_ulm_per_view",
     "model_to_anndata",
     "split_by_view",
     "lr_usage",
-    "restore_anns_factor"
+    "restore_anns_factor",
 ]

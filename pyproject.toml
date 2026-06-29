@@ -22,14 +22,23 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "mofaflex @ git+https://github.com/bioFAM/mofaflex.git@main",
+  "anndata",
   "decoupler",
-  "scanpy"
+  "matplotlib",
+  "mofaflex @ git+https://github.com/bioFAM/mofaflex.git@main",
+  "networkx",
+  "numpy",
+  "pandas",
+  "scanpy",
+  "scipy",
+  "scikit-bio",
+  "seaborn",
+  "squidpy",
+  "statsmodels",
 ]
 
 optional-dependencies.extra = [
   "liana", # required for ligand-receptor networks
-  "squidpy", # required for spatial summaries
   "patpy @ git+https://github.com/lueckenlab/patpy.git@main", # required for patient representation
 ]
 

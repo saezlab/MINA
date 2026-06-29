@@ -61,7 +61,7 @@ extra_css:
 nav:
   - Home: index.md
   - Tutorials:
-      - Available aplications : tutorials.md
+      - Available applications: tutorials.md
       - Multicellular Factor Analysis with MOFA: notebooks/GetStarted_MOFA.ipynb
       - Multicellular Programs Guided by Patient Covariates: notebooks/GetStarted_SOFA.ipynb
       - Multicellular Programs Across Experimental Groups: notebooks/GetStarted_groups.ipynb

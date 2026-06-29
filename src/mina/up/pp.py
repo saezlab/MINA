@@ -1,4 +1,5 @@
-# Dependencies
+"""Preprocessing utilities for MINA upstream data objects."""
+
 import re
 
 import pandas as pd
@@ -28,7 +29,6 @@ def extract_metadata_from_obs(obs: pd.DataFrame, groupby: str, sort: bool = Fals
     pandas.DataFrame
         Group-level metadata table.
     """
-
     stable_cols = []
 
     for col in obs.columns:
@@ -36,11 +36,7 @@ def extract_metadata_from_obs(obs: pd.DataFrame, groupby: str, sort: bool = Fals
             continue
 
         # Group values and check if each group has only one unique value
-        is_stable = (
-            obs.groupby(groupby, observed=False)[col]
-            .apply(lambda x: x.dropna().nunique() <= 1)
-            .all()
-        )
+        is_stable = obs.groupby(groupby, observed=False)[col].apply(lambda x: x.dropna().nunique() <= 1).all()
 
         if is_stable:
             stable_cols.append(col)
@@ -59,6 +55,19 @@ def extract_metadata_from_obs(obs: pd.DataFrame, groupby: str, sort: bool = Fals
     if sort:
 
         def extract_number(x):
+            """
+            Extract the first integer from a string for natural sorting.
+
+            Parameters
+            ----------
+            x : str
+                Value from which to extract a numeric sorting key.
+
+            Returns
+            -------
+            number : int or float
+                Extracted integer, or infinity when no integer is present.
+            """
             match = re.search(r"(\d+)", x)
             return int(match.group(1)) if match else float("inf")
 
@@ -86,7 +95,6 @@ def split_anndata_by_celltype(pdata, grouping="cell_type"):
     dict[str, anndata.AnnData]
         Dictionary mapping cell types to AnnData objects.
     """
-
     if grouping not in pdata.obs.columns:
         raise ValueError(f"'{grouping}' not found in `pdata.obs`.")
 
@@ -120,7 +128,6 @@ def norm_log(anndata_dict, target_sum=1e6, exclude_highly_expressed=False, max_v
     None
         The input dictionary is modified in place.
     """
-
     for _key, adata in anndata_dict.items():
         # Step 1: Perform total count normalization
         sc.pp.normalize_total(adata, target_sum=target_sum, exclude_highly_expressed=exclude_highly_expressed)

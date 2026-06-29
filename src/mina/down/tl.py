@@ -1,4 +1,5 @@
-# Dependencies:
+"""Downstream statistical and network-analysis tools for MINA outputs."""
+
 from __future__ import annotations
 
 import warnings
@@ -210,7 +211,9 @@ def calc_total_variance(adata, associations_df, pval_thrs=0.05):
 
     return total_var_dict
 
+
 # Multiple tests
+
 
 def get_pval_matrix(adata, covars):
     """
@@ -238,7 +241,11 @@ def get_pval_matrix(adata, covars):
     missing_covars = [c for c in covars if c not in adata.obs.columns]
 
     if missing_covars:
-        warnings.warn(f"Skipping missing covariates not found in adata.obs: {missing_covars}", UserWarning)
+        warnings.warn(
+            f"Skipping missing covariates not found in adata.obs: {missing_covars}",
+            UserWarning,
+            stacklevel=2,
+        )
 
     if not existing_covars:
         raise ValueError("None of the provided covariates are present in adata.obs.")
@@ -246,12 +253,7 @@ def get_pval_matrix(adata, covars):
     # Collect adjusted p-values per covariate
     p_df = pd.DataFrame()
     for covar in existing_covars:
-        assocs = get_associations(
-            adata=adata,
-            test_variable=covar,
-            test_type=None,
-            random_effect=None
-        )
+        assocs = get_associations(adata=adata, test_variable=covar, test_type=None, random_effect=None)
         p_df[covar] = assocs["adj_p_value"]
 
     # Assign factor names as index
@@ -313,8 +315,7 @@ def build_info_networks(
     verbose: bool = True,
 ) -> pd.DataFrame:
     """
-    Fit pairwise linear models among columns of an enriched-score matrix
-    to infer directed information networks.
+    Fit pairwise linear models to infer directed information networks.
 
     Parameters
     ----------
@@ -421,9 +422,9 @@ def _select_views(
 
     Parameters
     ----------
-    views_dict
+    views_dict : dict[str, pandas.DataFrame]
         Dictionary mapping view names to data frames.
-    views
+    views : str, sequence of str, or None
         Views to keep. If None or "all", keep all views.
 
     Returns
@@ -431,7 +432,6 @@ def _select_views(
     dict[str, pandas.DataFrame]
         Subsetted view dictionary.
     """
-
     if views is None or views == "all":
         return views_dict
 
@@ -455,6 +455,7 @@ def _select_views(
 
     return {view: views_dict[view] for view in views}
 
+
 def get_multicell_net(
     test_model: ad.AnnData,
     sel_factor: str,
@@ -463,7 +464,7 @@ def get_multicell_net(
     standardize: bool = False,
     drop_na: bool = True,
     verbose: bool = True,
-    percentile: float = 0.85
+    percentile: float = 0.85,
 ) -> dict[str, pd.DataFrame]:
     """
     Given a factor of interest within a model, we reconstruct multicellular information networks by:
@@ -578,6 +579,7 @@ def multiview_to_wide(
 ) -> tuple[pd.DataFrame | np.ndarray, pd.Index, list[str]]:
     """
     Build a dense wide matrix (samples × features) from a dict of per-view AnnData.
+
     Uses the UNION of samples in first-seen order; rows missing in a view are zero-filled.
 
     Parameters
@@ -590,6 +592,15 @@ def multiview_to_wide(
         If True, prefix feature names with view name (e.g., "view1:geneA"). Default is True.
     return_dataframe : bool
         If True, return a pandas DataFrame with sample IDs and feature names. If False, return a NumPy array with separate index and column lists.
+
+    Returns
+    -------
+    wide : pandas.DataFrame or numpy.ndarray
+        Wide matrix containing all view features.
+    sample_index : pandas.Index
+        Union of sample identifiers. Returned only when ``return_dataframe`` is False.
+    colnames : list[str]
+        Wide-matrix feature names. Returned only when ``return_dataframe`` is False.
     """
     if not views:
         raise ValueError("`views` is empty.")
@@ -748,6 +759,7 @@ def project_wide_to_factors(
 
     return proj_ad
 
+
 def lr_usage(
     gene_loadings,
     resource,
@@ -761,21 +773,22 @@ def lr_usage(
 ):
     """
     Recover ligand-receptor interactions constrained by a coordination network and coherent loading signs.
+
     This means that the ligand and receptor must both have loadings of the same sign (positive or negative)
     in their respective source and target cell types.
 
     Parameters
     ----------
-    gene_loadings : dict[str, pd.DataFrame]
+    gene_loadings : dict[str, pandas.DataFrame]
         Dictionary where keys are cell types and values are loading dataframes.
         Each dataframe is expected to have factors as rows and genes as columns.
 
-    resource : pd.DataFrame
+    resource : pandas.DataFrame
         Ligand-receptor resource with at least columns:
         - ligand
         - receptor
 
-    network_df : pd.DataFrame
+    network_df : pandas.DataFrame
         Source-target network with at least columns:
         - target
         - predictor
@@ -802,22 +815,16 @@ def lr_usage(
 
     Returns
     -------
-    pd.DataFrame
+    ligand_receptor_usage : pandas.DataFrame
         Dataframe ready to pass to `plot_lr_tiles`.
     """
     if loading_type not in {"positive", "negative", "both"}:
         raise ValueError("loading_type must be one of: 'positive', 'negative', 'both'.")
 
-    missing_factors = [
-        cell_type
-        for cell_type, loadings in gene_loadings.items()
-        if sel_factor not in loadings.index
-    ]
+    missing_factors = [cell_type for cell_type, loadings in gene_loadings.items() if sel_factor not in loadings.index]
 
     if missing_factors:
-        raise ValueError(
-            f"`sel_factor={sel_factor}` is missing from: {missing_factors}"
-        )
+        raise ValueError(f"`sel_factor={sel_factor}` is missing from: {missing_factors}")
 
     # 1. bind selected factor loadings across cell types
     bound_loadings = pd.concat(
@@ -830,15 +837,11 @@ def lr_usage(
 
     # 2. keep only ligands/receptors present in loadings
     ligands_list = [
-        ligand
-        for ligand in resource["ligand"].dropna().unique().tolist()
-        if ligand in bound_loadings.columns
+        ligand for ligand in resource["ligand"].dropna().unique().tolist() if ligand in bound_loadings.columns
     ]
 
     receptors_list = [
-        receptor
-        for receptor in resource["receptor"].dropna().unique().tolist()
-        if receptor in bound_loadings.columns
+        receptor for receptor in resource["receptor"].dropna().unique().tolist() if receptor in bound_loadings.columns
     ]
 
     if len(ligands_list) == 0:
@@ -848,33 +851,17 @@ def lr_usage(
         raise ValueError("No receptors from `resource` were found in `gene_loadings`.")
 
     # 3. source-ligand loadings
-    source_lig = (
-        bound_loadings[ligands_list]
-        .stack()
-        .reset_index()
-    )
+    source_lig = bound_loadings[ligands_list].stack().reset_index()
     source_lig.columns = ["source", "ligand", "source_loading"]
 
     # 4. target-receptor loadings
-    target_rec = (
-        bound_loadings[receptors_list]
-        .stack()
-        .reset_index()
-    )
+    target_rec = bound_loadings[receptors_list].stack().reset_index()
     target_rec.columns = ["target", "receptor", "target_loading"]
 
     # 5. join ligand-receptor resource
-    lr_resource = (
-        resource[["ligand", "receptor"]]
-        .dropna()
-        .drop_duplicates()
-    )
+    lr_resource = resource[["ligand", "receptor"]].dropna().drop_duplicates()
 
-    df = (
-        source_lig
-        .merge(lr_resource, on="ligand", how="inner")
-        .merge(target_rec, on="receptor", how="inner")
-    )
+    df = source_lig.merge(lr_resource, on="ligand", how="inner").merge(target_rec, on="receptor", how="inner")
 
     # 6. restrict to allowed source-target pairs
     allowed = network_df[["target", "predictor", weight_col]].copy()
@@ -886,12 +873,7 @@ def lr_usage(
     if not keep_negative:
         allowed = allowed[allowed["weight"] >= 0]
 
-    allowed = (
-        allowed
-        .rename(columns={"predictor": "source"})
-        [["source", "target", "weight"]]
-        .drop_duplicates()
-    )
+    allowed = allowed.rename(columns={"predictor": "source"})[["source", "target", "weight"]].drop_duplicates()
 
     df = df.merge(
         allowed,
@@ -900,10 +882,7 @@ def lr_usage(
     )
 
     # 7. remove zero loadings before sign comparison
-    df = df[
-        (df["source_loading"] != 0)
-        & (df["target_loading"] != 0)
-    ].copy()
+    df = df[(df["source_loading"] != 0) & (df["target_loading"] != 0)].copy()
 
     # 8. keep coherent signs
     df["source_sign"] = np.sign(df["source_loading"]).astype(int)
@@ -920,21 +899,13 @@ def lr_usage(
     # 9. interaction labels and scores
     df["interaction"] = df["ligand"].astype(str) + " - " + df["receptor"].astype(str)
 
-    df["lr_score"] = (
-        df["source_loading"].abs()
-        * df["target_loading"].abs()
-    )
+    df["lr_score"] = df["source_loading"].abs() * df["target_loading"].abs()
 
     df = df.sort_values("lr_score", ascending=False).copy()
 
     # 10. keep top unique interactions
     if n_top is not None:
-        top_interactions = (
-            df["interaction"]
-            .drop_duplicates()
-            .head(n_top)
-            .tolist()
-        )
+        top_interactions = df["interaction"].drop_duplicates().head(n_top).tolist()
 
         df = df[df["interaction"].isin(top_interactions)].copy()
 

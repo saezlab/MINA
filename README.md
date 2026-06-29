@@ -26,14 +26,6 @@ The `0.1.x` series introduces a revised API and is not fully backward-compatible
 
 There are several alternative options to install MINA:
 
-<!--
-1) Install the latest release of `MINA` from [PyPI][]:
-
-```bash
-pip install MINA
-```
--->
-
 1. Install the latest development version:
 
 ```bash
